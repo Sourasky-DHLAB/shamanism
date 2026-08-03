@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local Archive Importer</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">Local administration tool</p>
+      <h1>Archive Importer</h1>
+      <p class="lede">Validate posts and comments JSON, merge them into an existing archive, and download a replacement <code>archive.json</code>.</p>
+    </div>
+    <a class="button secondary" href="index.html">Return to archive</a>
+  </header>
+  <main class="import-layout">
+    <section class="panel">
+      <h2>1. Choose files</h2>
+      <p>This page processes files only in your browser. It does not upload them to a server.</p>
+      <div class="drop-zone"><label><span>Posts JSON</span><input id="posts-file" type="file" accept="application/json,.json"></label></div>
+      <div class="drop-zone"><label><span>Comments JSON</span><input id="comments-file" type="file" accept="application/json,.json"></label></div>
+      <div class="drop-zone"><label><span>Existing archive.json (optional, for adding another collection)</span><input id="archive-file" type="file" accept="application/json,.json"></label></div>
+      <div class="control-grid">
+        <label><span>Collection title (optional)</span><input id="collection-title" placeholder="@profile"></label>
+        <label><span>Collection ID (optional)</span><input id="collection-id" placeholder="profile-name"></label>
+      </div>
+      <label class="checkbox"><input id="anonymize" type="checkbox"> Replace commenter usernames with stable pseudonyms</label>
+      <div class="control-actions">
+        <button class="button" id="validate" type="button">Validate and build</button>
+        <button class="button secondary" id="download" type="button" disabled>Download archive.json</button>
+      </div>
+    </section>
+    <section class="panel" style="margin-top:1rem">
+      <h2>2. Validation report</h2>
+      <ul id="validation" class="validation-list"><li>Choose the two source files, then validate.</li></ul>
+      <pre id="output" class="output" hidden></pre>
+    </section>
+    <section class="panel" style="margin-top:1rem">
+      <h2>3. Publish</h2>
+      <p>Replace <code>docs/data/archive.json</code> in the GitHub repository with the downloaded file, commit the change, and GitHub Pages will redeploy automatically.</p>
+      <p>Instagram CDN links may expire. For durable media, use the included Python importer with <code>--download-media</code>.</p>
+    </section>
+  </main>
+  <script src="assets/importer.js" defer></script>
+</body>
+</html>

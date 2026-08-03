@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Searchable social-media research archive">
+  <title>Instagram Research Archive</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#results">Skip to results</a>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">Academic research collection</p>
+      <h1>Instagram Research Archive</h1>
+      <p class="lede">Search posts, captions, locations, media descriptions, and preserved comments.</p>
+    </div>
+    <a class="button secondary" href="importer.html">Open local importer</a>
+  </header>
+
+  <main>
+    <section class="panel controls" aria-labelledby="search-heading">
+      <h2 id="search-heading">Search the archive</h2>
+      <div class="control-grid">
+        <label class="search-field">
+          <span>Search</span>
+          <input id="query" type="search" placeholder="Caption, comment, username, location…" autocomplete="off">
+        </label>
+        <label>
+          <span>Collection</span>
+          <select id="collection-filter"><option value="">All collections</option></select>
+        </label>
+        <label>
+          <span>Content type</span>
+          <select id="type-filter"><option value="">All types</option></select>
+        </label>
+        <label>
+          <span>Sort</span>
+          <select id="sort-filter">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="likes">Most liked</option>
+            <option value="comments">Most preserved comments</option>
+          </select>
+        </label>
+        <label>
+          <span>From</span>
+          <input id="date-from" type="date">
+        </label>
+        <label>
+          <span>To</span>
+          <input id="date-to" type="date">
+        </label>
+      </div>
+      <div class="control-actions">
+        <label class="checkbox"><input id="comments-only" type="checkbox"> Only posts with preserved comments</label>
+        <button id="clear-filters" class="button secondary" type="button">Clear filters</button>
+      </div>
+    </section>
+
+    <section id="stats" class="stats" aria-label="Archive statistics"></section>
+
+    <section aria-labelledby="results-heading">
+      <div class="section-heading">
+        <h2 id="results-heading">Results</h2>
+        <p id="result-count" aria-live="polite"></p>
+      </div>
+      <div id="notice" class="notice" hidden></div>
+      <div id="results" class="results-grid"></div>
+      <div id="empty-state" class="empty-state" hidden>
+        <h3>No matching posts</h3>
+        <p>Try removing a filter or using fewer search terms.</p>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="post-dialog" class="post-dialog">
+    <button id="close-dialog" class="dialog-close" aria-label="Close post details">×</button>
+    <article id="dialog-content"></article>
+  </dialog>
+
+  <footer>
+    <p>Generated from researcher-supplied exports. Collection timestamps and completeness indicators are retained for provenance.</p>
+  </footer>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>
