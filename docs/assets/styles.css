@@ -33,6 +33,16 @@ input:focus, select:focus, button:focus-visible, a:focus-visible { outline: 3px 
 .checkbox input { width: auto; }
 .button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--accent); border-radius: 999px; padding: .65rem 1rem; background: var(--accent); color: white; text-decoration: none; cursor: pointer; }
 .button.secondary { background: transparent; color: var(--accent); }
+.button.secondary {
+  background: transparent;
+  color: var(--accent);
+}
+
+.site-header > .button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  width: fit-content;
+}
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin: 1rem 0 2rem; }
 .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; }
 .stat strong { display: block; font-size: 1.55rem; }
