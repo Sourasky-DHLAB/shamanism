@@ -170,21 +170,66 @@
     if (!media || !media.sourceUrl) return `<div class="media-fallback">No archived media file</div>`;
     const alt = media.altText || post.altText || `Media from Instagram post ${post.shortcode}`;
     if (String(media.type).toLowerCase().includes('video')) {
-      return `<video ${compact ? 'muted' : 'controls'} preload="metadata" poster="${escapeAttr(post.thumbnailUrl || '')}"><source src="${escapeAttr(media.localPath || media.sourceUrl)}"></video><div class="media-fallback">Video unavailable</div>`;
+      return `<video ${compact ? 'muted' : 'controls'} preload="metadata" poster="${escapeAttr(post.thumbnailUrl || '')}"><source src="${escapeAttr(media.localPath || media.sourceUrl)}"></video><div class="media-fallback" hidden>Video unavailable</div>`;
     }
-    return `<img src="${escapeAttr(media.localPath || media.sourceUrl)}" alt="${escapeAttr(alt)}" loading="lazy"><div class="media-fallback">Media URL unavailable. Import a local copy for permanent display.</div>`;
+    return `<img src="${escapeAttr(media.localPath || media.sourceUrl)}" alt="${escapeAttr(alt)}" loading="lazy"><div class="media-fallback" hidden>Media URL unavailable. Import a local copy for permanent display.</div>`;
   }
 
   function installImageFallbacks(root) {
-    root.querySelectorAll('img').forEach(img => {
-      img.addEventListener('load', () => { const fallback = img.nextElementSibling; if (fallback?.classList.contains('media-fallback')) fallback.hidden = true; }, { once: true });
-      img.addEventListener('error', () => { img.hidden = true; }, { once: true });
-    });
-    root.querySelectorAll('video').forEach(video => {
-      video.addEventListener('loadedmetadata', () => { const fallback = video.nextElementSibling; if (fallback?.classList.contains('media-fallback')) fallback.hidden = true; }, { once: true });
-      video.addEventListener('error', () => { video.hidden = true; }, { once: true });
-    });
-  }
+  root.querySelectorAll('img').forEach(img => {
+    const fallback = img.nextElementSibling;
+
+    const showFallback = () => {
+      img.hidden = true;
+      if (fallback?.classList.contains('media-fallback')) {
+        fallback.hidden = false;
+      }
+    };
+
+    const hideFallback = () => {
+      img.hidden = false;
+      if (fallback?.classList.contains('media-fallback')) {
+        fallback.hidden = true;
+      }
+    };
+
+    if (img.complete) {
+      if (img.naturalWidth > 0) {
+        hideFallback();
+      } else {
+        showFallback();
+      }
+    } else {
+      img.addEventListener('load', hideFallback, { once: true });
+      img.addEventListener('error', showFallback, { once: true });
+    }
+  });
+
+  root.querySelectorAll('video').forEach(video => {
+    const fallback = video.nextElementSibling;
+
+    const showFallback = () => {
+      video.hidden = true;
+      if (fallback?.classList.contains('media-fallback')) {
+        fallback.hidden = false;
+      }
+    };
+
+    const hideFallback = () => {
+      video.hidden = false;
+      if (fallback?.classList.contains('media-fallback')) {
+        fallback.hidden = true;
+      }
+    };
+
+    if (video.readyState >= 1) {
+      hideFallback();
+    } else {
+      video.addEventListener('loadedmetadata', hideFallback, { once: true });
+      video.addEventListener('error', showFallback, { once: true });
+    }
+  });
+}
 
   function openPost(id) {
     const post = state.posts.find(p => p.id === id);
