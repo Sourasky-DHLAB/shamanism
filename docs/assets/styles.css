@@ -55,6 +55,9 @@ input:focus, select:focus, button:focus-visible, a:focus-visible { outline: 3px 
 .media-preview { position: relative; aspect-ratio: 1 / 1; background: linear-gradient(135deg, #dfe6e1, #eee9de); overflow: hidden; }
 .media-preview img, .media-preview video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .media-fallback { position: absolute; inset: 0; display: grid; place-items: center; padding: 1rem; text-align: center; color: var(--muted); }
+.media-fallback[hidden] {
+  display: none !important;
+}
 .media-badge { position: absolute; top: .7rem; right: .7rem; background: rgba(20,25,22,.82); color: white; border-radius: 999px; padding: .25rem .55rem; font-size: .72rem; }
 .card-body { display: flex; flex-direction: column; flex: 1; padding: 1rem; }
 .card-meta { display: flex; justify-content: space-between; gap: .6rem; color: var(--muted); font-size: .78rem; }
