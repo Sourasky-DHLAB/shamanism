@@ -7,49 +7,304 @@
   <title>Text Analysis Kit</title>
   <link rel="stylesheet" href="assets/styles.css">
   <style>
-    .analysis-shell { max-width: 1280px; margin: 0 auto; padding: 24px; }
-    .analysis-nav { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
-    .analysis-nav h1 { margin:0; font-size: clamp(28px, 4vw, 44px); }
-    .analysis-nav p { margin:6px 0 0; color: var(--muted, #657188); max-width: 820px; }
-    .analysis-layout { display:grid; grid-template-columns: 340px minmax(0, 1fr); gap: 18px; align-items:start; }
-    .analysis-card { background: var(--panel, #fff); border:1px solid rgba(0,0,0,.08); border-radius: 18px; padding: 18px; box-shadow: 0 8px 28px rgba(0,0,0,.06); }
-    .analysis-card h2 { margin-top:0; }
-    .field { display:grid; gap:6px; margin-bottom:12px; }
-    .field span { font-size: 13px; color: var(--muted, #657188); }
-    .field input, .field select, .field textarea {
-      width: 100%; box-sizing: border-box; border:1px solid rgba(0,0,0,.12); border-radius: 12px; padding: 10px 12px;
-      font: inherit; background: #fff; color: inherit;
+    .analysis-shell {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px;
     }
-    .field textarea { min-height: 180px; resize: vertical; }
-    .inline { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .inline-3 { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .check { display:flex; gap:10px; align-items:center; padding: 10px 12px; border:1px solid rgba(0,0,0,.12); border-radius:12px; margin-bottom:12px; }
-    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top: 12px; }
-    button, .btn {
-      appearance:none; border:0; border-radius:999px; padding: 11px 16px; font: inherit; font-weight: 600; cursor:pointer; text-decoration:none;
-      display:inline-flex; align-items:center; justify-content:center; background:#3563e9; color:#fff;
+
+    .analysis-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
     }
-    .btn.secondary, button.secondary { background: rgba(53,99,233,.10); color: inherit; border:1px solid rgba(0,0,0,.10); }
-    .muted { color: var(--muted, #657188); font-size: 13px; line-height: 1.5; }
-    .tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 12px; }
-    .tab { border:1px solid rgba(0,0,0,.10); background: rgba(53,99,233,.08); color: inherit; border-radius:999px; padding:9px 14px; cursor:pointer; }
-    .tab.active { background: #3563e9; color:#fff; border-color:#3563e9; }
-    .panel { display:none; }
-    .panel.active { display:block; }
-    .table-wrap { overflow:auto; border:1px solid rgba(0,0,0,.10); border-radius:14px; }
-    table { width:100%; border-collapse:collapse; min-width: 640px; }
-    th, td { padding:10px 12px; border-bottom:1px solid rgba(0,0,0,.08); text-align:left; vertical-align:top; }
-    th { background: rgba(0,0,0,.03); position:sticky; top:0; z-index:1; }
-    .kwic-item { border:1px solid rgba(0,0,0,.10); border-radius:14px; padding:12px; margin-bottom:10px; background: rgba(0,0,0,.02); }
-    .kwic-line { line-height:1.65; word-break: break-word; }
-    .hit { background: #ffe066; color:#111; padding: 0 4px; border-radius: 6px; font-weight: 700; }
-    .result-meta { margin-top: 6px; font-size: 12px; color: var(--muted, #657188); display:flex; gap:10px; flex-wrap:wrap; }
-    .notice { margin-bottom: 14px; padding: 12px 14px; border-radius: 12px; background: rgba(255,0,0,.06); color:#8a1f2f; border:1px solid rgba(255,0,0,.12); }
-    .summary { display:flex; flex-wrap:wrap; gap:10px; margin: 10px 0 14px; }
-    .pill { padding:8px 10px; border-radius:999px; background: rgba(0,0,0,.04); border:1px solid rgba(0,0,0,.08); font-size: 13px; }
-    .grid-two { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+
+    .analysis-nav h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+    }
+
+    .analysis-nav p {
+      margin: 6px 0 0;
+      color: var(--muted, #657188);
+      max-width: 820px;
+      line-height: 1.5;
+    }
+
+    .analysis-layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .analysis-card {
+      background: var(--panel, #fff);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
+      min-width: 0;
+    }
+
+    .analysis-card h2 {
+      margin-top: 0;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+      min-width: 0;
+    }
+
+    .field span {
+      font-size: 13px;
+      color: var(--muted, #657188);
+      line-height: 1.35;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      background: #fff;
+      color: inherit;
+      min-width: 0;
+    }
+
+    .field textarea {
+      min-height: 180px;
+      resize: vertical;
+    }
+
+    .inline {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .inline-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      padding: 10px 12px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      line-height: 1.35;
+    }
+
+    .check input {
+      margin: 2px 0 0;
+      width: 16px;
+      height: 16px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button,
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 16px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #3563e9;
+      color: #fff;
+    }
+
+    .btn.secondary,
+    button.secondary {
+      background: rgba(53, 99, 233, 0.10);
+      color: inherit;
+      border: 1px solid rgba(0, 0, 0, 0.10);
+    }
+
+    .muted {
+      color: var(--muted, #657188);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tab {
+      border: 1px solid rgba(0, 0, 0, 0.10);
+      background: rgba(53, 99, 233, 0.08);
+      color: inherit;
+      border-radius: 999px;
+      padding: 9px 14px;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: #3563e9;
+      color: #fff;
+      border-color: #3563e9;
+    }
+
+    .panel {
+      display: none;
+      min-width: 0;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid rgba(0, 0, 0, 0.10);
+      border-radius: 14px;
+      max-width: 100%;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 640px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      text-align: left;
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    th {
+      background: rgba(0, 0, 0, 0.03);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .kwic-item {
+      border: 1px solid rgba(0, 0, 0, 0.10);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: rgba(0, 0, 0, 0.02);
+    }
+
+    .kwic-line {
+      line-height: 1.65;
+      word-break: break-word;
+    }
+
+    .hit {
+      background: #ffe066;
+      color: #111;
+      padding: 0 4px;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+
+    .result-meta {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted, #657188);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .notice {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255, 0, 0, 0.06);
+      color: #8a1f2f;
+      border: 1px solid rgba(255, 0, 0, 0.12);
+    }
+
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0 14px;
+    }
+
+    .pill {
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      font-size: 13px;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
     @media (max-width: 1050px) {
-      .analysis-layout, .grid-two { grid-template-columns: 1fr; }
+      .analysis-layout,
+      .grid-two {
+        grid-template-columns: 1fr;
+      }
+
+      .analysis-card {
+        padding: 16px;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .analysis-shell {
+        padding: 16px;
+      }
+
+      .inline,
+      .inline-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .analysis-nav {
+        align-items: flex-start;
+      }
+
+      .analysis-nav .btn {
+        width: 100%;
+      }
+
+      table {
+        min-width: 560px;
+      }
     }
   </style>
 </head>
@@ -68,14 +323,17 @@
     <div class="analysis-layout">
       <aside class="analysis-card">
         <h2>Corpus controls</h2>
+
         <div class="field">
           <span>Collection</span>
           <select id="collection-filter"><option value="">All collections</option></select>
         </div>
+
         <div class="field">
           <span>Content type</span>
           <select id="type-filter"><option value="">All types</option></select>
         </div>
+
         <div class="inline">
           <div class="field">
             <span>From</span>
@@ -86,7 +344,8 @@
             <input id="date-to" type="date">
           </div>
         </div>
-        <label class="check"><input id="comments-only" type="checkbox"> Only posts with preserved comments</label>
+
+        <label class="check"><input id="comments-only" type="checkbox"><span>Only posts with preserved comments</span></label>
 
         <div class="field">
           <span>Source text</span>
@@ -98,8 +357,8 @@
           </select>
         </div>
 
-        <label class="check"><input id="remove-stopwords" type="checkbox" checked> Remove stop words</label>
-        <label class="check"><input id="case-sensitive" type="checkbox"> Case sensitive</label>
+        <label class="check"><input id="remove-stopwords" type="checkbox" checked><span>Remove stop words</span></label>
+        <label class="check"><input id="case-sensitive" type="checkbox"><span>Case sensitive</span></label>
 
         <div class="inline-3">
           <div class="field">
