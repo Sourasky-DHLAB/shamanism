@@ -147,6 +147,7 @@
   function renderCard(post) {
     const media = (post.media || [])[0];
     const captionTitle = firstMeaningfulLine(post.caption) || `${post.contentType || 'Post'} ${post.shortcode}`;
+    const captionRemainder = afterFirstMeaningfulLine(post.caption);
     const complete = post.commentsPreserved >= post.commentsReported;
     return `<article class="post-card">
       <div class="media-preview">
@@ -156,7 +157,7 @@
       <div class="card-body">
         <div class="card-meta"><span>${escapeHtml(post.collectionTitle)}</span><time datetime="${escapeAttr(post.datePosted)}">${formatDate(post.datePosted)}</time></div>
         <h3>${highlight(captionTitle, state.query)}</h3>
-        <div class="caption">${highlight(post.caption, state.query)}</div>
+        ${captionRemainder ? `<div class="caption">${highlight(captionRemainder, state.query)}</div>` : ''}
         <span class="completeness ${complete ? '' : 'incomplete'}">${complete ? 'Comments complete for supplied count' : `${post.commentsPreserved} preserved of ${post.commentsReported} reported`}</span>
         <div class="card-footer">
           <span class="metrics">♥ ${formatNumber(post.likes)} · ${formatNumber(post.commentsPreserved)} preserved comments</span>
