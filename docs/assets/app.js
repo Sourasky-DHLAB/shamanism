@@ -171,7 +171,7 @@
     if (!media || !media.sourceUrl) return `<div class="media-fallback">No archived media file</div>`;
     const alt = media.altText || post.altText || `Media from Instagram post ${post.shortcode}`;
     if (String(media.type).toLowerCase().includes('video')) {
-      const attributes = compact ? 'muted controls playsinline' : 'controls playsinline';
+      const attributes = compact ? 'muted playsinline' : 'controls playsinline';
       return `<video ${attributes} preload="metadata" poster="${escapeAttr(post.thumbnailUrl || '')}"><source src="${escapeAttr(media.localPath || media.sourceUrl)}"></video><div class="media-fallback" hidden>Video unavailable</div>`;
     }
     return `<img src="${escapeAttr(media.localPath || media.sourceUrl)}" alt="${escapeAttr(alt)}" loading="lazy"><div class="media-fallback" hidden>Media URL unavailable. Import a local copy for permanent display.</div>`;
