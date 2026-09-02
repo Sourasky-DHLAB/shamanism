@@ -171,7 +171,8 @@
     if (!media || !media.sourceUrl) return `<div class="media-fallback">No archived media file</div>`;
     const alt = media.altText || post.altText || `Media from Instagram post ${post.shortcode}`;
     if (String(media.type).toLowerCase().includes('video')) {
-      return `<video ${compact ? 'muted' : 'controls'} preload="metadata" poster="${escapeAttr(post.thumbnailUrl || '')}"><source src="${escapeAttr(media.localPath || media.sourceUrl)}"></video><div class="media-fallback" hidden>Video unavailable</div>`;
+      const attributes = compact ? 'muted controls playsinline' : 'controls playsinline';
+      return `<video ${attributes} preload="metadata" poster="${escapeAttr(post.thumbnailUrl || '')}"><source src="${escapeAttr(media.localPath || media.sourceUrl)}"></video><div class="media-fallback" hidden>Video unavailable</div>`;
     }
     return `<img src="${escapeAttr(media.localPath || media.sourceUrl)}" alt="${escapeAttr(alt)}" loading="lazy"><div class="media-fallback" hidden>Media URL unavailable. Import a local copy for permanent display.</div>`;
   }
@@ -223,12 +224,21 @@
       }
     };
 
-    if (video.readyState >= 1) {
+    const revealPreviewFrame = () => {
       hideFallback();
+      if (video.closest('.media-preview') && Number.isFinite(video.duration) && video.duration > 0 && video.currentTime === 0) {
+        video.currentTime = Math.min(0.1, video.duration / 2);
+      }
+    };
+
+    if (video.readyState >= 1) {
+      revealPreviewFrame();
     } else {
-      video.addEventListener('loadedmetadata', hideFallback, { once: true });
-      video.addEventListener('error', showFallback, { once: true });
+      video.addEventListener('loadedmetadata', revealPreviewFrame, { once: true });
     }
+    video.addEventListener('loadeddata', hideFallback, { once: true });
+    video.addEventListener('seeked', hideFallback, { once: true });
+    video.addEventListener('error', showFallback, { once: true });
   });
 }
 
