@@ -294,6 +294,12 @@
     return String(text || '').split(/\n+/).map(s => s.trim()).find(Boolean)?.slice(0, 100) || '';
   }
 
+  function afterFirstMeaningfulLine(text) {
+    const lines = String(text || '').split(/\n/);
+    const firstIndex = lines.findIndex(line => line.trim());
+    return firstIndex < 0 ? '' : lines.slice(firstIndex + 1).join('\n').trim();
+  }
+
   function highlight(text, query) {
     const safe = escapeHtml(text || '');
     const terms = String(query || '').trim().split(/\s+/).filter(Boolean).sort((a,b) => b.length - a.length);
