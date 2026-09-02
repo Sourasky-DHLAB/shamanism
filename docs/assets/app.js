@@ -268,6 +268,7 @@
 
   function renderDialog(post) {
     const comments = post.comments || [];
+    const commentTree = buildCommentTree(comments);
     const gallery = (post.media || []).map((m, i) => `<figure class="media-item">${renderMedia(m, post)}<figcaption class="media-badge">${i + 1} / ${(post.media || []).length}</figcaption></figure>`).join('');
     els.dialogContent.innerHTML = `<div class="detail">
       <header class="detail-header">
@@ -279,7 +280,7 @@
       <h3>Caption</h3>
       <div class="detail-caption">${linkify(escapeHtml(post.caption))}</div>
       <h3>Preserved comments</h3>
-      ${comments.length ? `<ul class="comment-list">${comments.map(renderComment).join('')}</ul>` : '<p>No separate comment records were supplied for this post.</p>'}
+      ${comments.length ? `<ul class="comment-list">${commentTree.map(renderComment).join('')}</ul>` : '<p>No separate comment records were supplied for this post.</p>'}
       <p class="completeness ${post.commentsPreserved < post.commentsReported ? 'incomplete' : ''}">${post.commentsPreserved} preserved of ${post.commentsReported} comments reported by the post export.</p>
       <h3>Provenance</h3>
       <div class="provenance">
@@ -292,11 +293,28 @@
     installImageFallbacks(els.dialogContent);
   }
 
+  function buildCommentTree(comments) {
+    const nodes = new Map(comments.map(comment => [
+      String(comment.id),
+      { ...comment, replies: [] }
+    ]));
+    const roots = [];
+    for (const comment of comments) {
+      const node = nodes.get(String(comment.id));
+      const parentId = comment.parentCommentId == null ? '' : String(comment.parentCommentId);
+      const parent = parentId && parentId !== String(comment.id) ? nodes.get(parentId) : null;
+      if (parent) parent.replies.push(node);
+      else roots.push(node);
+    }
+    return roots;
+  }
+
   function renderComment(comment) {
     return `<li class="comment">
       <div class="comment-head"><strong>${comment.userUrl ? `<a href="${escapeAttr(comment.userUrl)}" target="_blank" rel="noopener">@${escapeHtml(comment.username)}</a>` : `@${escapeHtml(comment.username)}`}</strong><time datetime="${escapeAttr(comment.date)}">${formatDateTime(comment.date)}</time></div>
       <p>${highlight(comment.text, state.query)}</p>
       <small>♥ ${formatNumber(comment.likes)} · ${formatNumber(comment.repliesReported)} replies reported</small>
+      ${comment.replies?.length ? `<ul class="comment-replies">${comment.replies.map(renderComment).join('')}</ul>` : ''}
     </li>`;
   }
 
