@@ -102,7 +102,7 @@
     renderSummary(docs, tokenStream);
     renderWordFrequency(tokenStream);
     renderCollocations(docs);
-    renderNgrams(tokenStream);
+    renderNgrams(docs);
     renderKwic(docs);
   }
 
@@ -120,17 +120,7 @@
   }
 
   function buildDocuments(posts) {
-    const mode = els.sourceMode.value;
-    return posts.map(post => {
-      let parts = [];
-      if (mode === 'both' || mode === 'captions') parts.push(post.caption || '');
-      if (mode === 'both' || mode === 'comments') parts.push((post.comments || []).map(c => c.text || '').join(' '));
-      if (mode === 'both' || mode === 'alt') parts.push(post.altText || '', ...(post.media || []).map(m => m.altText || ''));
-      return {
-        ...post,
-        text: parts.filter(Boolean).join(' ')
-      };
-    }).filter(doc => doc.text.trim().length > 0);
+    return AnalysisRecords.buildDocuments(posts, els.sourceMode.value);
   }
 
   function renderSummary(docs, tokens) {
@@ -139,7 +129,7 @@
     const media = state.filtered.reduce((sum, post) => sum + (post.media || []).length, 0);
     els.summary.innerHTML = [
       ['Posts', posts],
-      ['Documents', docs.length],
+      ['Text records', docs.length],
       ['Tokens', tokens.length],
       ['Comments', comments],
       ['Media', media]
@@ -154,24 +144,8 @@
 
   function renderCollocations(docs) {
     const windowSize = clampInt(els.windowSize.value, 2, 10);
-    const pairMap = new Map();
-    const freq = new Map();
-    let totalTokens = 0;
-
-    for (const doc of docs) {
-      const tokens = tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !STOP_WORDS.has(token));
-      totalTokens += tokens.length;
-      tokens.forEach(token => freq.set(token, (freq.get(token) || 0) + 1));
-      for (let i = 0; i < tokens.length; i++) {
-        for (let j = i + 1; j < Math.min(tokens.length, i + windowSize + 1); j++) {
-          const a = tokens[i];
-          const b = tokens[j];
-          if (!a || !b || a === b) continue;
-          const key = a < b ? `${a}|||${b}` : `${b}|||${a}`;
-          pairMap.set(key, (pairMap.get(key) || 0) + 1);
-        }
-      }
-    }
+    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !STOP_WORDS.has(token)));
+    const { pairMap, freq, totalTokens } = AnalysisRecords.collocations(streams, windowSize);
 
     const rowsData = [...pairMap.entries()].map(([key, count]) => {
       const [a, b] = key.split('|||');
@@ -185,13 +159,10 @@
     els.collocationOutput.innerHTML = rows ? tableWrap('Word 1', 'Word 2', rows, ['Count', 'PMI']) : emptyState('No collocations found for the current subset.');
   }
 
-  function renderNgrams(tokens) {
+  function renderNgrams(docs) {
     const n = clampInt(els.ngramSize.value, 2, 5);
-    const counts = new Map();
-    for (let i = 0; i <= tokens.length - n; i++) {
-      const gram = tokens.slice(i, i + n).join(' ');
-      counts.set(gram, (counts.get(gram) || 0) + 1);
-    }
+    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !STOP_WORDS.has(token)));
+    const counts = AnalysisRecords.ngrams(streams, n);
     const rowsData = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 50);
     const rows = rowsData.map(([gram, count]) => `<tr><td>${escapeHtml(gram)}</td><td>${formatNumber(count)}</td></tr>`).join('');
     els.ngramsOutput.innerHTML = rows ? tableWrap(`${n}-gram`, 'Count', rows) : emptyState('No n-grams found for the current subset.');
@@ -205,21 +176,7 @@
       return;
     }
 
-    const caseSensitive = els.caseSensitive.checked;
-    const needle = normalizeForSearch(term, caseSensitive);
-    const lines = [];
-
-    for (const doc of docs) {
-      const tokens = tokenize(doc.text, !caseSensitive);
-      for (let i = 0; i < tokens.length; i++) {
-        if (normalizeForSearch(tokens[i], caseSensitive) !== needle) continue;
-        const left = tokens.slice(Math.max(0, i - contextSize), i).join(' ');
-        const right = tokens.slice(i + 1, i + 1 + contextSize).join(' ');
-        lines.push({ left, hit: tokens[i], right, doc });
-        if (lines.length >= 100) break;
-      }
-      if (lines.length >= 100) break;
-    }
+    const lines = AnalysisRecords.kwic(docs, term, contextSize, els.caseSensitive.checked);
 
     if (!lines.length) {
       els.kwicOutput.innerHTML = emptyState('No KWIC matches in the current subset.');
@@ -232,8 +189,10 @@
         <div class="result-meta">
           <span>${escapeHtml(line.doc.collectionTitle || '')}</span>
           <span>${escapeHtml(line.doc.contentType || '')}</span>
-          <span>${formatDate(line.doc.datePosted)}</span>
-          <span>${formatNumber((line.doc.comments || []).length)} comments</span>
+          <span>${escapeHtml(line.doc.sourceType)} · ${escapeHtml(line.doc.recordId)}</span>
+          <span>${escapeHtml(line.doc.recordAuthor ? '@' + line.doc.recordAuthor : 'Author not supplied')}</span>
+          <span>${line.doc.sourceDate ? formatDate(line.doc.sourceDate) : 'Date not supplied'}</span>
+          <a href="index.html#post=${encodeURIComponent(line.doc.id)}">View archived post</a>
         </div>
       </div>
     `).join('');
@@ -246,10 +205,7 @@
   }
 
   function tokenize(text, normalize = true) {
-    const source = String(text || '');
-    const value = normalize ? source.normalize('NFKD').toLowerCase() : source;
-    const matches = value.match(/\p{L}[\p{L}\p{N}'’_-]*/gu);
-    return matches ? matches.map(token => token.replace(/[’]/g, "'")).filter(Boolean) : [];
+    return AnalysisRecords.tokenize(text, normalize);
   }
 
   function normalizeForSearch(text, caseSensitive) {
@@ -284,3 +240,4 @@
     return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   }
 })();
+

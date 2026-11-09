@@ -1,0 +1,32 @@
+name: Analysis record boundaries
+on:
+  push:
+    branches: ['fix/analysis-record-boundaries']
+  pull_request:
+    paths: ['docs/assets/analysis*.js', 'docs/analysis.html', 'tests/analysis*']
+permissions:
+  contents: read
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /docs/assets/
+            /docs/analysis.html
+            /tests/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          node --check docs/assets/analysis.js
+          node --test tests/analysis-records.test.cjs
+      - run: |
+          pip install playwright==1.61.0
+          python -m playwright install --with-deps chromium
+          python tests/analysis-browser.py
