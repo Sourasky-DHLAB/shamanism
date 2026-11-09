@@ -23,7 +23,7 @@ def run():
     origin = f'http://127.0.0.1:{server.server_port}'
     rows, history = {}, {}
     post = {'id': 'archive-id-1', 'shortcode': 'TEST1', 'caption': 'First post', 'datePosted': '2026-01-01', 'contentType': 'Image', 'comments': [], 'commentsPreserved': 0, 'commentsReported': 0}
-    archive = {'collections': [{'id': 'collection', 'title': 'Test collection', 'posts': [post, {**post, 'id': 'archive-id-2', 'shortcode': 'TEST2', 'caption': 'Second post'}]}]}
+    archive = {'collections': [{'id': 'collection', 'title': 'Test collection', 'username': 'the.baby.mudang', 'posts': [post, {**post, 'id': 'archive-id-2', 'shortcode': 'TEST2', 'caption': 'Second post'}]}]}
     def api(route):
         cors = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'apikey,content-type,authorization', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'}
         if route.request.method == 'OPTIONS':
@@ -66,6 +66,7 @@ def run():
         pages = []
         errors = []
         for context in contexts:
+            context.route('**/data/the-baby-mudang-metadata.json', lambda r: r.fulfill(content_type='application/json', body=json.dumps({'account':'the.baby.mudang','retrievedAt':'2026-11-09T08:48:06Z','posts':[{'shortcode':'TEST1','ownerUsername':'publisher','mentions':['mentioned'],'hashtags':['korean'],'taggedUsers':[{'username':'tagged'}],'collaborators':[{'username':'collaborator'}]}]})))
             context.route('**/data/archive.json', lambda r: r.fulfill(content_type='application/json', body=json.dumps(archive)))
             context.route('https://test.supabase.co/**', api)
             context.route('**/research-config.js', lambda r: r.fulfill(content_type='application/javascript', body="window.RESEARCH_CONFIG={supabaseUrl:'https://test.supabase.co',publishableKey:'public-test'}"))
@@ -78,6 +79,10 @@ def run():
             expect(page.locator('#research-user')).to_contain_text(who)
             page.locator('[data-post-id="archive-id-1"]').click()
         a, b, stranger = pages
+        expect(a.locator('.provenance')).to_contain_text('Instagram hashtags')
+        expect(a.locator('.provenance a[href="https://www.instagram.com/collaborator/"]')).to_have_text('@collaborator')
+        stranger.locator('#query').fill('#korean'); expect(stranger.locator('.post-card')).to_have_count(1)
+        stranger.locator('#clear-filters').click()
         a.locator('#research-notes').fill('הערות מחקר\nShared notes <script>bad()</script>')
         a.locator('#research-new-tag').fill('Spiritual but not Religious')
         a.get_by_role('button', name='Add tag', exact=True).click()

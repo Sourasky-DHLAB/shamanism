@@ -30,6 +30,7 @@
       const response = await fetch('data/archive.json', { cache: 'no-store' });
       if (!response.ok) throw new Error(`Could not load archive (${response.status})`);
       state.archive = await response.json();
+      await window.PostMetadata?.attach(state.archive);
       state.posts = flattenArchive(state.archive);
       window.ResearchUI?.setPosts(state.posts);
       populateFilters();
@@ -86,6 +87,7 @@
   function searchableText(post) {
     return normalize([
       post.caption,
+      window.PostMetadata?.searchText(post),
       window.ResearchUI?.searchText(post),
       post.username,
       post.contentType,
@@ -297,6 +299,7 @@
         <div><strong>Post shortcode</strong><br>${escapeHtml(post.shortcode)}</div>
         <div><strong>Collected</strong><br>${formatDateTime(post.collectedAt)}</div>
         <div><strong>Location</strong><br>${escapeHtml((post.location || []).join(', ') || 'Not supplied')}</div>
+        ${window.PostMetadata?.render(post) || ''}
         <div><strong>Media records</strong><br>${formatNumber((post.media || []).length)}</div>
       </div>
     </div>`;
