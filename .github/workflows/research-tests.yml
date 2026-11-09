@@ -1,0 +1,58 @@
+name: Research workspace tests
+on:
+  pull_request:
+    paths:
+      - 'docs/assets/**'
+      - 'docs/index.html'
+      - 'supabase/**'
+      - 'tests/**'
+      - '.github/workflows/research-tests.yml'
+  push:
+    branches: ['research/shared-annotations']
+permissions:
+  contents: read
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test-only-password
+          POSTGRES_DB: research_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: JavaScript checks and store tests
+        run: |
+          node --check docs/assets/app.js
+          node --check docs/assets/export.js
+          node --check docs/assets/research-ui.js
+          node --check docs/assets/research-store.js
+          node --test tests/research-store.test.cjs
+      - name: PostgreSQL permission and revision tests
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: test-only-password
+          PGDATABASE: research_test
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/research-db-bootstrap.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/research.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/research-tests.sql
+      - name: Browser integration tests
+        run: |
+          pip install playwright==1.61.0
+          python -m playwright install --with-deps chromium
+          python tests/research-browser.py
