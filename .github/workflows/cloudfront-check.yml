@@ -1,0 +1,30 @@
+name: Verify AWS media before excluding local copies
+on:
+  push:
+    branches: ['fix/pages-external-media']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      summary: ${{ steps.media.outputs.summary }}
+      hosts: ${{ steps.media.outputs.hosts }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /docs/data/archive.json
+            /tools/check_cloudfront_media.py
+          sparse-checkout-cone-mode: false
+      - name: Verify AWS media coverage
+        id: media
+        run: python tools/check_cloudfront_media.py
+  report:
+    needs: verify
+    if: always()
+    runs-on: ubuntu-latest
+    name: '${{ needs.verify.outputs.summary }}; hosts ${{ needs.verify.outputs.hosts }}'
+    steps:
+      - run: echo 'Read-only AWS media coverage report.'
