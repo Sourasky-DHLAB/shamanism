@@ -112,12 +112,42 @@ def merge_collection(old, incoming):
         if post["id"] not in posts:
             posts[post["id"]] = post
             continue
+
         old_post = posts[post["id"]]
         comments = {c["id"]: c for c in old_post.get("comments", [])}
         comments.update({c["id"]: c for c in post.get("comments", [])})
-        posts[post["id"]] = {**old_post, **post, "comments": sorted(comments.values(), key=lambda c: c.get("date") or ""), "commentsPreserved": len(comments)}
-    return {**old, **incoming, "posts": sorted(posts.values(), key=lambda p: p.get("datePosted") or "", reverse=True)}
 
+        old_media = {
+            str(m.get("id") or f"index:{m.get('index')}"): m
+            for m in old_post.get("media", [])
+        }
+        merged_media = []
+        for item in post.get("media", []):
+            key = str(item.get("id") or f"index:{item.get('index')}")
+            previous = old_media.get(key, {})
+            if not item.get("localPath") and previous.get("localPath"):
+                item = {**item, "localPath": previous["localPath"]}
+            merged_media.append(item)
+
+        merged = {
+            **old_post,
+            **post,
+            "media": merged_media,
+            "comments": sorted(comments.values(), key=lambda c: c.get("date") or ""),
+            "commentsPreserved": len(comments),
+        }
+        merged["commentsMissing"] = max(
+            0, integer(merged.get("commentsReported")) - len(comments)
+        )
+        posts[post["id"]] = merged
+
+    return {
+        **old,
+        **incoming,
+        "posts": sorted(
+            posts.values(), key=lambda p: p.get("datePosted") or "", reverse=True
+        ),
+    }
 
 def download_media(collection, media_dir):
     media_dir = Path(media_dir)

@@ -85,6 +85,8 @@ mark { background: #f5df89; color: inherit; padding: 0 .08em; }
 .comment:first-child { border-top: 0; }
 .comment-head { display: flex; justify-content: space-between; gap: .8rem; font-size: .82rem; color: var(--muted); }
 .comment p { white-space: pre-wrap; }
+.comment-replies { list-style: none; margin: .8rem 0 0 1.25rem; padding: 0 0 0 1rem; border-left: 2px solid var(--accent-soft); }
+.comment-replies .comment { padding-bottom: 0; }
 .provenance { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .7rem; font-size: .82rem; }
 .provenance div { background: #faf8f3; padding: .75rem; border-radius: 10px; }
 footer { color: var(--muted); font-size: .82rem; padding: 3rem 0; }

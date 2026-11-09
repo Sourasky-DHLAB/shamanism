@@ -136,15 +136,41 @@
   function mergeCollection(oldCollection, incoming) {
     const posts = new Map((oldCollection.posts || []).map(p => [p.id, p]));
     for (const post of incoming.posts) {
-      if (!posts.has(post.id)) posts.set(post.id, post);
-      else {
-        const old = posts.get(post.id);
-        const comments = new Map((old.comments || []).map(c => [c.id, c]));
-        for (const comment of post.comments || []) comments.set(comment.id, comment);
-        posts.set(post.id, { ...old, ...post, comments: [...comments.values()].sort((a,b) => new Date(a.date) - new Date(b.date)), commentsPreserved: comments.size });
+      if (!posts.has(post.id)) {
+        posts.set(post.id, post);
+        continue;
       }
+
+      const old = posts.get(post.id);
+      const comments = new Map((old.comments || []).map(c => [c.id, c]));
+      for (const comment of post.comments || []) comments.set(comment.id, comment);
+
+      const oldMedia = new Map((old.media || []).map(item => [
+        String(item.id || `index:${item.index}`),
+        item
+      ]));
+      const media = (post.media || []).map(item => {
+        const previous = oldMedia.get(String(item.id || `index:${item.index}`));
+        return !item.localPath && previous?.localPath
+          ? { ...item, localPath: previous.localPath }
+          : item;
+      });
+
+      const merged = {
+        ...old,
+        ...post,
+        media,
+        comments: [...comments.values()].sort((a,b) => new Date(a.date) - new Date(b.date)),
+        commentsPreserved: comments.size
+      };
+      merged.commentsMissing = Math.max(0, integer(merged.commentsReported) - comments.size);
+      posts.set(post.id, merged);
     }
-    return { ...oldCollection, ...incoming, posts: [...posts.values()].sort((a,b) => new Date(b.datePosted) - new Date(a.datePosted)) };
+    return {
+      ...oldCollection,
+      ...incoming,
+      posts: [...posts.values()].sort((a,b) => new Date(b.datePosted) - new Date(a.datePosted))
+    };
   }
 
   async function pseudonym(username) {

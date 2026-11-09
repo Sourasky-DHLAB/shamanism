@@ -147,6 +147,7 @@
   function renderCard(post) {
     const media = (post.media || [])[0];
     const captionTitle = firstMeaningfulLine(post.caption) || `${post.contentType || 'Post'} ${post.shortcode}`;
+    const captionRemainder = afterFirstMeaningfulLine(post.caption);
     const complete = post.commentsPreserved >= post.commentsReported;
     return `<article class="post-card">
       <div class="media-preview">
@@ -156,7 +157,7 @@
       <div class="card-body">
         <div class="card-meta"><span>${escapeHtml(post.collectionTitle)}</span><time datetime="${escapeAttr(post.datePosted)}">${formatDate(post.datePosted)}</time></div>
         <h3>${highlight(captionTitle, state.query)}</h3>
-        <div class="caption">${highlight(post.caption, state.query)}</div>
+        ${captionRemainder ? `<div class="caption">${highlight(captionRemainder, state.query)}</div>` : ''}
         <span class="completeness ${complete ? '' : 'incomplete'}">${complete ? 'Comments complete for supplied count' : `${post.commentsPreserved} preserved of ${post.commentsReported} reported`}</span>
         <div class="card-footer">
           <span class="metrics">♥ ${formatNumber(post.likes)} · ${formatNumber(post.commentsPreserved)} preserved comments</span>
@@ -170,7 +171,8 @@
     if (!media || !media.sourceUrl) return `<div class="media-fallback">No archived media file</div>`;
     const alt = media.altText || post.altText || `Media from Instagram post ${post.shortcode}`;
     if (String(media.type).toLowerCase().includes('video')) {
-      return `<video ${compact ? 'muted' : 'controls'} preload="metadata" poster="${escapeAttr(post.thumbnailUrl || '')}"><source src="${escapeAttr(media.localPath || media.sourceUrl)}"></video><div class="media-fallback" hidden>Video unavailable</div>`;
+      const attributes = compact ? 'muted playsinline' : 'controls playsinline';
+      return `<video ${attributes} preload="metadata" poster="${escapeAttr(post.thumbnailUrl || '')}"><source src="${escapeAttr(media.localPath || media.sourceUrl)}"></video><div class="media-fallback" hidden>Video unavailable</div>`;
     }
     return `<img src="${escapeAttr(media.localPath || media.sourceUrl)}" alt="${escapeAttr(alt)}" loading="lazy"><div class="media-fallback" hidden>Media URL unavailable. Import a local copy for permanent display.</div>`;
   }
@@ -222,12 +224,21 @@
       }
     };
 
-    if (video.readyState >= 1) {
+    const revealPreviewFrame = () => {
       hideFallback();
+      if (video.closest('.media-preview') && Number.isFinite(video.duration) && video.duration > 0 && video.currentTime === 0) {
+        video.currentTime = Math.min(0.1, video.duration / 2);
+      }
+    };
+
+    if (video.readyState >= 1) {
+      revealPreviewFrame();
     } else {
-      video.addEventListener('loadedmetadata', hideFallback, { once: true });
-      video.addEventListener('error', showFallback, { once: true });
+      video.addEventListener('loadedmetadata', revealPreviewFrame, { once: true });
     }
+    video.addEventListener('loadeddata', hideFallback, { once: true });
+    video.addEventListener('seeked', hideFallback, { once: true });
+    video.addEventListener('error', showFallback, { once: true });
   });
 }
 
@@ -257,6 +268,7 @@
 
   function renderDialog(post) {
     const comments = post.comments || [];
+    const commentTree = buildCommentTree(comments);
     const gallery = (post.media || []).map((m, i) => `<figure class="media-item">${renderMedia(m, post)}<figcaption class="media-badge">${i + 1} / ${(post.media || []).length}</figcaption></figure>`).join('');
     els.dialogContent.innerHTML = `<div class="detail">
       <header class="detail-header">
@@ -268,7 +280,7 @@
       <h3>Caption</h3>
       <div class="detail-caption">${linkify(escapeHtml(post.caption))}</div>
       <h3>Preserved comments</h3>
-      ${comments.length ? `<ul class="comment-list">${comments.map(renderComment).join('')}</ul>` : '<p>No separate comment records were supplied for this post.</p>'}
+      ${comments.length ? `<ul class="comment-list">${commentTree.map(renderComment).join('')}</ul>` : '<p>No separate comment records were supplied for this post.</p>'}
       <p class="completeness ${post.commentsPreserved < post.commentsReported ? 'incomplete' : ''}">${post.commentsPreserved} preserved of ${post.commentsReported} comments reported by the post export.</p>
       <h3>Provenance</h3>
       <div class="provenance">
@@ -281,16 +293,39 @@
     installImageFallbacks(els.dialogContent);
   }
 
+  function buildCommentTree(comments) {
+    const nodes = new Map(comments.map(comment => [
+      String(comment.id),
+      { ...comment, replies: [] }
+    ]));
+    const roots = [];
+    for (const comment of comments) {
+      const node = nodes.get(String(comment.id));
+      const parentId = comment.parentCommentId == null ? '' : String(comment.parentCommentId);
+      const parent = parentId && parentId !== String(comment.id) ? nodes.get(parentId) : null;
+      if (parent) parent.replies.push(node);
+      else roots.push(node);
+    }
+    return roots;
+  }
+
   function renderComment(comment) {
     return `<li class="comment">
       <div class="comment-head"><strong>${comment.userUrl ? `<a href="${escapeAttr(comment.userUrl)}" target="_blank" rel="noopener">@${escapeHtml(comment.username)}</a>` : `@${escapeHtml(comment.username)}`}</strong><time datetime="${escapeAttr(comment.date)}">${formatDateTime(comment.date)}</time></div>
       <p>${highlight(comment.text, state.query)}</p>
       <small>♥ ${formatNumber(comment.likes)} · ${formatNumber(comment.repliesReported)} replies reported</small>
+      ${comment.replies?.length ? `<ul class="comment-replies">${comment.replies.map(renderComment).join('')}</ul>` : ''}
     </li>`;
   }
 
   function firstMeaningfulLine(text) {
     return String(text || '').split(/\n+/).map(s => s.trim()).find(Boolean)?.slice(0, 100) || '';
+  }
+
+  function afterFirstMeaningfulLine(text) {
+    const lines = String(text || '').split(/\n/);
+    const firstIndex = lines.findIndex(line => line.trim());
+    return firstIndex < 0 ? '' : lines.slice(firstIndex + 1).join('\n').trim();
   }
 
   function highlight(text, query) {
