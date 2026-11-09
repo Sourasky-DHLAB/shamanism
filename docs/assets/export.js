@@ -50,6 +50,7 @@
     const date = new Date(post.datePosted);
 
     return terms.every(term => searchableText(post).includes(term))
+      && (!window.ResearchUI || window.ResearchUI.matches(post))
       && (!collection || post.collectionId === collection)
       && (!type || post.contentType === type)
       && (!from || date >= from)
@@ -60,6 +61,7 @@
   function searchableText(post) {
     return normalize([
       post.caption,
+      window.ResearchUI?.searchText(post),
       post.username,
       post.contentType,
       ...(post.location || []),
@@ -75,7 +77,7 @@
 
   function buildCommentCsv(posts) {
     const headers = [
-      'collection_id','collection_title','post_id','shortcode','post_date','post_type','post_username','post_url','post_caption','post_likes','post_comments_reported','post_comments_preserved','post_media_count','comment_username','comment_date','comment_text','comment_likes','comment_replies_reported','comment_url'
+      'collection_id','collection_title','post_id','shortcode','post_date','post_type','post_username','post_url','post_caption','post_likes','post_comments_reported','post_comments_preserved','post_media_count','comment_username','comment_date','comment_text','comment_likes','comment_replies_reported','comment_url','research_notes','research_tags'
     ];
 
     const rows = [headers];
@@ -85,7 +87,7 @@
         rows.push([
           post.collectionId, post.collectionTitle, post.id, post.shortcode, post.datePosted, post.contentType, post.username,
           post.url, post.caption, post.likes, post.commentsReported, post.commentsPreserved, (post.media || []).length,
-          '', '', '', '', '', ''
+          '', '', '', '', '', '', ...annotationCells(post)
         ]);
         continue;
       }
@@ -93,7 +95,7 @@
         rows.push([
           post.collectionId, post.collectionTitle, post.id, post.shortcode, post.datePosted, post.contentType, post.username,
           post.url, post.caption, post.likes, post.commentsReported, post.commentsPreserved, (post.media || []).length,
-          comment.username, comment.date, comment.text, comment.likes, comment.repliesReported, comment.userUrl || ''
+          comment.username, comment.date, comment.text, comment.likes, comment.repliesReported, comment.userUrl || '', ...annotationCells(post)
         ]);
       }
     }
@@ -102,7 +104,7 @@
 
   function buildPostCsv(posts) {
     const headers = [
-      'collection_id','collection_title','post_id','shortcode','post_date','post_type','post_username','post_url','post_caption','post_likes','post_comments_reported','post_comments_preserved','post_media_count','comments_count','comments_usernames','comments_dates','comments_text'
+      'collection_id','collection_title','post_id','shortcode','post_date','post_type','post_username','post_url','post_caption','post_likes','post_comments_reported','post_comments_preserved','post_media_count','comments_count','comments_usernames','comments_dates','comments_text','research_notes','research_tags'
     ];
 
     const rows = [headers];
@@ -118,6 +120,7 @@
         post.username,
         post.url,
         post.caption,
+      window.ResearchUI?.searchText(post),
         post.likes,
         post.commentsReported,
         post.commentsPreserved,
@@ -125,10 +128,16 @@
         comments.length,
         comments.map(c => c.username).filter(Boolean).join(' | '),
         comments.map(c => c.date).filter(Boolean).join(' | '),
-        comments.map(c => `${c.username ? `@${c.username}: ` : ''}${c.text || ''}`).join(' || ')
+        comments.map(c => `${c.username ? `@${c.username}: ` : ''}${c.text || ''}`).join(' || '),
+        ...annotationCells(post)
       ]);
     }
     return rows.map(toCsvRow).join('\r\n');
+  }
+
+  function annotationCells(post) {
+    const row = window.ResearchUI?.annotation(post);
+    return [row?.notes || '', JSON.stringify(row?.tags || [])];
   }
 
   function toCsvRow(values) {
@@ -170,3 +179,4 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 })();
+

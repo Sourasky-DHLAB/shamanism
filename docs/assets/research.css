@@ -1,0 +1,14 @@
+.research-panel, .research-editor { padding: 1.25rem; margin: 1rem 0; border: 1px solid #cbd5e1; border-radius: .75rem; }
+.research-panel h2, .research-editor h3 { margin-top: 0; }
+.research-panel form, .research-actions { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; margin: .75rem 0; }
+.research-panel label, .research-editor label { display: grid; gap: .4rem; margin: .75rem 0; }
+.research-panel input, .research-panel select, .research-editor input, .research-editor textarea { font: inherit; padding: .6rem; border: 1px solid #94a3b8; border-radius: .4rem; max-width: 100%; }
+.research-editor textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 8rem; }
+.research-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin: .75rem 0; }
+.research-tag { display: inline-block; font: inherit; font-size: .9rem; padding: .3rem .65rem; border: 1px solid #94a3b8; border-radius: 1rem; background: #f1f5f9; color: #0f172a; overflow-wrap: anywhere; }
+button.research-tag { cursor: pointer; }
+.research-tag[aria-pressed="true"] { color: white; background: #1e3a8a; border-color: #1e3a8a; }
+.research-panel summary, .research-editor summary { cursor: pointer; padding: .6rem 0; font-weight: 600; }
+.research-editor pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; padding: .75rem; background: #f8fafc; color: #0f172a; }
+.research-panel [hidden] { display: none !important; }
+.research-panel button:disabled, .research-editor button:disabled { opacity: .6; cursor: wait; }

@@ -25,11 +25,13 @@
     });
 
     bindEvents();
+    await window.ResearchUI?.init({ changed: applyFilters });
     try {
       const response = await fetch('data/archive.json', { cache: 'no-store' });
       if (!response.ok) throw new Error(`Could not load archive (${response.status})`);
       state.archive = await response.json();
       state.posts = flattenArchive(state.archive);
+      window.ResearchUI?.setPosts(state.posts);
       populateFilters();
       renderStats();
       if (state.archive.notice) {
@@ -48,6 +50,7 @@
     [els.query, els.collection, els.type, els.sort, els.from, els.to, els.commentsOnly]
       .forEach(el => el.addEventListener(el.tagName === 'INPUT' && el.type === 'search' ? 'input' : 'change', applyFilters));
     els.clear.addEventListener('click', () => {
+      window.ResearchUI?.resetFilters();
       els.query.value = '';
       els.collection.value = '';
       els.type.value = '';
@@ -59,6 +62,7 @@
     });
     els.closeDialog.addEventListener('click', closeDialog);
     els.dialog.addEventListener('click', event => { if (event.target === els.dialog) closeDialog(); });
+    els.dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });
     window.addEventListener('hashchange', openFromHash);
   }
 
@@ -82,6 +86,7 @@
   function searchableText(post) {
     return normalize([
       post.caption,
+      window.ResearchUI?.searchText(post),
       post.username,
       post.contentType,
       ...(post.location || []),
@@ -102,6 +107,7 @@
       const date = new Date(post.datePosted);
       const matchesQuery = terms.every(term => searchableText(post).includes(term));
       return matchesQuery
+        && (!window.ResearchUI || window.ResearchUI.matches(post))
         && (!els.collection.value || post.collectionId === els.collection.value)
         && (!els.type.value || post.contentType === els.type.value)
         && (!from || date >= from)
@@ -159,6 +165,7 @@
         <h3>${highlight(captionTitle, state.query)}</h3>
         ${captionRemainder ? `<div class="caption">${highlight(captionRemainder, state.query)}</div>` : ''}
         <span class="completeness ${complete ? '' : 'incomplete'}">${complete ? 'Comments complete for supplied count' : `${post.commentsPreserved} preserved of ${post.commentsReported} reported`}</span>
+        ${window.ResearchUI?.badges(post) || ''}
         <div class="card-footer">
           <span class="metrics">♥ ${formatNumber(post.likes)} · ${formatNumber(post.commentsPreserved)} preserved comments</span>
           <button class="button secondary" data-post-id="${escapeAttr(post.id)}">View post</button>
@@ -244,7 +251,7 @@
 
   function openPost(id) {
     const post = state.posts.find(p => p.id === id);
-    if (!post) return;
+    if (!post || (window.ResearchUI && !window.ResearchUI.canLeave())) return;
     if (location.hash !== `#post=${encodeURIComponent(id)}`) history.pushState(null, '', `#post=${encodeURIComponent(id)}`);
     renderDialog(post);
     if (!els.dialog.open) els.dialog.showModal();
@@ -256,12 +263,15 @@
     const id = decodeURIComponent(match[1]);
     const post = state.posts.find(p => p.id === id);
     if (post) {
+      if (window.ResearchUI && !window.ResearchUI.canLeave()) return;
       renderDialog(post);
       if (!els.dialog.open) els.dialog.showModal();
     }
   }
 
   function closeDialog() {
+    if (window.ResearchUI && !window.ResearchUI.canLeave()) return;
+    window.ResearchUI?.closeEditor();
     els.dialog.close();
     if (location.hash.startsWith('#post=')) history.pushState(null, '', location.pathname + location.search);
   }
@@ -290,6 +300,7 @@
         <div><strong>Media records</strong><br>${formatNumber((post.media || []).length)}</div>
       </div>
     </div>`;
+    window.ResearchUI?.mountEditor(post, els.dialogContent);
     installImageFallbacks(els.dialogContent);
   }
 
@@ -355,3 +366,4 @@
   function escapeAttr(value) { return escapeHtml(value); }
   function escapeRegExp(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 })();
+
