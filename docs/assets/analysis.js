@@ -100,7 +100,7 @@
     const tokenStream = els.removeStopwords.checked ? tokens.filter(token => !STOP_WORDS.has(token)) : tokens;
 
     renderSummary(docs, tokenStream);
-    renderWordFrequency(tokenStream);
+    renderWordFrequency(docs);
     renderCollocations(docs);
     renderNgrams(docs);
     renderKwic(docs);
@@ -136,10 +136,11 @@
     ].map(([label, value]) => `<span class="pill"><strong>${formatNumber(value)}</strong> ${escapeHtml(label)}</span>`).join('');
   }
 
-  function renderWordFrequency(tokens) {
-    const counts = countTerms(tokens);
-    const rows = counts.slice(0, 50).map(([term, count]) => `<tr><td>${escapeHtml(term)}</td><td>${formatNumber(count)}</td></tr>`).join('');
-    els.frequencyOutput.innerHTML = rows ? tableWrap('Term', 'Count', rows) : emptyState('No tokens matched your filters.');
+  function renderWordFrequency(docs) {
+    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !STOP_WORDS.has(token)));
+    const counts = AnalysisRecords.frequencies(streams);
+    const rows = counts.slice(0, 50).map(({ term, count, records }) => `<tr><td>${escapeHtml(term)}</td><td>${formatNumber(count)}</td><td>${formatNumber(records)}</td></tr>`).join('');
+    els.frequencyOutput.innerHTML = rows ? tableWrap('Term', 'Total occurrences', rows, ['Records']) : emptyState('No tokens matched your filters.');
   }
 
   function renderCollocations(docs) {
