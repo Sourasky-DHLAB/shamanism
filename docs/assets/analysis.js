@@ -170,8 +170,8 @@
 
   function renderCollocations(docs) {
     const windowSize = clampInt(els.windowSize.value, 2, 10);
-    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !isStopword(token)));
-    const { pairMap, freq, totalTokens } = AnalysisRecords.collocations(streams, windowSize);
+    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked));
+    const { pairMap, freq, totalTokens } = AnalysisRecords.collocations(streams, windowSize, token => els.removeStopwords.checked && isStopword(token));
 
     const rowsData = [...pairMap.entries()].map(([key, count]) => {
       const [a, b] = key.split('|||');
@@ -187,8 +187,8 @@
 
   function renderNgrams(docs) {
     const n = clampInt(els.ngramSize.value, 2, 5);
-    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !isStopword(token)));
-    const counts = AnalysisRecords.ngrams(streams, n);
+    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked));
+    const counts = AnalysisRecords.ngrams(streams, n, token => els.removeStopwords.checked && isStopword(token));
     const rowsData = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 50);
     const rows = rowsData.map(([gram, count]) => `<tr><td>${escapeHtml(gram)}</td><td>${formatNumber(count)}</td></tr>`).join('');
     els.ngramsOutput.innerHTML = rows ? tableWrap(`${n}-gram`, 'Count', rows) : emptyState('No n-grams found for the current subset.');

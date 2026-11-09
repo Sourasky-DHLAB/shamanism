@@ -362,7 +362,7 @@
         <div class="field">
           <label for="stopwords-file">Custom stopwords (.txt)</label>
           <input id="stopwords-file" type="file" accept=".txt,text/plain" aria-describedby="stopwords-help stopwords-status">
-          <p id="stopwords-help" class="muted">Upload a UTF-8 text file with one word per line. The words supplement the built-in list when Remove stop words is enabled. Matching ignores capitalization. The file stays in your browser; KWIC context keeps its original words.</p>
+          <p id="stopwords-help" class="muted">Upload a UTF-8 text file with one word per line. The words supplement the built-in list when Remove stop words is enabled. Matching ignores capitalization. The file stays in your browser; KWIC context keeps its original words. N-grams containing stopwords are excluded without joining words across gaps. Collocation windows count original word positions and exclude stopwords as pair members.</p>
           <p id="stopwords-status" class="muted" role="status" aria-live="polite">No custom stopword file loaded.</p>
           <button id="clear-stopwords" class="secondary" type="button">Clear uploaded stopwords</button>
         </div>
