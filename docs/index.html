@@ -71,11 +71,16 @@
     <section id="stats" class="stats" aria-label="Archive statistics"></section>
     <section aria-labelledby="results-heading">
       <div class="section-heading">
-        <h2 id="results-heading">Results</h2>
+        <h2 id="results-heading" tabindex="-1">Results</h2>
         <p id="result-count" aria-live="polite"></p>
       </div>
       <div id="notice" class="notice" hidden></div>
       <div id="results" class="results-grid"></div>
+      <nav id="pagination" class="pagination" aria-label="Post result pages" hidden>
+        <button id="previous-page" class="button secondary" type="button">Previous</button>
+        <span id="page-status"></span>
+        <button id="next-page" class="button secondary" type="button">Next</button>
+      </nav>
       <div id="empty-state" class="empty-state" hidden>
         <h3>No matching posts</h3>
         <p>Try removing a filter or using fewer search terms.</p>
@@ -99,4 +104,5 @@
   <script src="assets/export.js" defer></script>
 </body>
 </html>
+
 

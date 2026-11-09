@@ -1,5 +1,5 @@
 (() => {
-  const state = { archive: null, posts: [], filtered: [], query: '' };
+  const state = { archive: null, posts: [], filtered: [], query: '', page: 1, pageSize: 24 };
   const els = {};
 
   document.addEventListener('DOMContentLoaded', init);
@@ -18,6 +18,10 @@
       results: document.querySelector('#results'),
       count: document.querySelector('#result-count'),
       empty: document.querySelector('#empty-state'),
+      pagination: document.querySelector('#pagination'),
+      previousPage: document.querySelector('#previous-page'),
+      nextPage: document.querySelector('#next-page'),
+      pageStatus: document.querySelector('#page-status'),
       notice: document.querySelector('#notice'),
       dialog: document.querySelector('#post-dialog'),
       dialogContent: document.querySelector('#dialog-content'),
@@ -50,7 +54,10 @@
   function bindEvents() {
     [els.query, els.collection, els.type, els.sort, els.from, els.to, els.commentsOnly]
       .forEach(el => el.addEventListener(el.tagName === 'INPUT' && el.type === 'search' ? 'input' : 'change', applyFilters));
+    els.previousPage.addEventListener('click', () => changePage(-1));
+    els.nextPage.addEventListener('click', () => changePage(1));
     els.clear.addEventListener('click', () => {
+      state.page = 1;
       window.ResearchUI?.resetFilters();
       els.query.value = '';
       els.collection.value = '';
@@ -98,7 +105,8 @@
     ].join(' '));
   }
 
-  function applyFilters() {
+  function applyFilters(event) {
+    if (event?.type) state.page = 1;
     const query = normalize(els.query.value.trim());
     state.query = els.query.value.trim();
     const terms = query.split(/\s+/).filter(Boolean);
@@ -124,6 +132,7 @@
       comments: (a, b) => (b.commentsPreserved || 0) - (a.commentsPreserved || 0)
     };
     posts.sort(sorters[els.sort.value] || sorters.newest);
+    if (posts.length !== state.filtered.length || posts.some((p, i) => p.id !== state.filtered[i]?.id)) state.page = 1;
     state.filtered = posts;
     renderResults();
   }
@@ -143,13 +152,30 @@
   }
 
   function renderResults() {
-    els.count.textContent = `${state.filtered.length} of ${state.posts.length} posts`;
+    const pages = Math.max(1, Math.ceil(state.filtered.length / state.pageSize));
+    state.page = Math.min(Math.max(1, state.page), pages);
+    const start = (state.page - 1) * state.pageSize;
+    const visible = state.filtered.slice(start, start + state.pageSize);
+    els.count.textContent = state.filtered.length ? `Showing ${start + 1}–${start + visible.length} of ${state.filtered.length} matching posts (${state.posts.length} in archive)` : `0 of ${state.posts.length} posts`;
+    els.pagination.hidden = pages <= 1;
+    els.previousPage.disabled = state.page === 1;
+    els.nextPage.disabled = state.page === pages;
+    els.pageStatus.textContent = `Page ${state.page} of ${pages}`;
     els.empty.hidden = state.filtered.length !== 0;
-    els.results.innerHTML = state.filtered.map(renderCard).join('');
+    els.results.innerHTML = visible.map(renderCard).join('');
     els.results.querySelectorAll('[data-post-id]').forEach(button => {
       button.addEventListener('click', () => openPost(button.dataset.postId));
     });
     installImageFallbacks(els.results);
+  }
+
+  function changePage(delta) {
+    const pages = Math.max(1, Math.ceil(state.filtered.length / state.pageSize));
+    state.page = Math.min(Math.max(1, state.page + delta), pages);
+    renderResults();
+    const heading = document.querySelector('#results-heading');
+    heading.focus({ preventScroll: true });
+    heading.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
 
   function renderCard(post) {
@@ -369,4 +395,5 @@
   function escapeAttr(value) { return escapeHtml(value); }
   function escapeRegExp(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 })();
+
 

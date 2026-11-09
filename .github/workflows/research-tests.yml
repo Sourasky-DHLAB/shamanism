@@ -8,7 +8,7 @@ on:
       - 'tests/**'
       - '.github/workflows/research-tests.yml'
   push:
-    branches: ['research/shared-annotations']
+    branches: ['research/shared-annotations', 'feature/archive-pagination']
 permissions:
   contents: read
 jobs:
@@ -63,3 +63,5 @@ jobs:
           pip install playwright==1.61.0
           python -m playwright install --with-deps chromium
           python tests/research-browser.py
+          python tests/pagination-browser.py
+
