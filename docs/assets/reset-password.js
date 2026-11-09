@@ -9,19 +9,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     status.textContent = text;
     status.classList.toggle('research-error', error);
   };
-  // Consume the fragment in memory, then remove credentials from the address/history.
-  const hash = window.location.hash;
-  history.replaceState(null, '', window.location.pathname);
-  let token;
-  try {
-    token = PasswordRecovery.readLink(hash);
-    await client.verify(token);
-    form.hidden = false;
-    message('Choose a new password with at least 8 characters.');
-  } catch (error) {
+  let token, generation = 0;
+  async function openRecoveryLink() {
+    const current = ++generation;
+    const hash = window.location.hash;
+    history.replaceState(null, '', window.location.pathname);
     token = null;
-    message(error.message, true);
+    form.hidden = true;
+    message('Checking your reset link…');
+    try {
+      const incomingToken = PasswordRecovery.readLink(hash);
+      await client.verify(incomingToken);
+      if (current !== generation) return;
+      token = incomingToken;
+      form.hidden = false;
+      message('Choose a new password with at least 8 characters.');
+    } catch (error) {
+      if (current === generation) message(error.message, true);
+    }
   }
+  // A new email link may navigate within an already-open reset page.
+  window.addEventListener('hashchange', () => { if (window.location.hash) openRecoveryLink(); });
+  await openRecoveryLink();
   form.addEventListener('submit', async event => {
     event.preventDefault();
     const button = form.querySelector('button');
