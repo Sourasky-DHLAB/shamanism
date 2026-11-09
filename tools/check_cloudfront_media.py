@@ -12,7 +12,7 @@ archive = json.loads(Path('docs/data/archive.json').read_text(encoding='utf-8'))
 media = [m for c in archive['collections'] for p in c.get('posts', []) for m in p.get('media', [])]
 hosts = Counter(urlparse(m.get('localPath') or m.get('sourceUrl') or '').hostname or 'relative' for m in media)
 local = sorted({m['localPath'] for m in media if str(m.get('localPath') or '').startswith('media/')})
-targets = sorted({BASE + path for path in local} | {m['localPath'] for m in media if str(m.get('localPath') or '').startswith(BASE)})
+targets = sorted({BASE + path.removeprefix('media/') for path in local} | {m['localPath'] for m in media if str(m.get('localPath') or '').startswith(BASE)})
 def check(url):
     try:
         with urlopen(Request(url, method='HEAD'), timeout=20) as response:
