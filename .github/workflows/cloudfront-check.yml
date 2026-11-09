@@ -11,6 +11,8 @@ jobs:
     outputs:
       summary: ${{ steps.media.outputs.summary }}
       hosts: ${{ steps.media.outputs.hosts }}
+      first_failure: ${{ steps.media.outputs.first_failure }}
+      migration_sample: ${{ steps.media.outputs.migration_sample }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -18,6 +20,10 @@ jobs:
             /docs/data/archive.json
             /tools/check_cloudfront_media.py
           sparse-checkout-cone-mode: false
+      - name: Inspect earlier AWS mapping without changing current data
+        run: |
+          git fetch --depth=1 origin e9c2657ffa872722e4812567ed7f1eeaf2d5da32
+          git show e9c2657ffa872722e4812567ed7f1eeaf2d5da32:docs/data/archive.json > "$RUNNER_TEMP/aws-migration-archive.json"
       - name: Verify AWS media coverage
         id: media
         run: python tools/check_cloudfront_media.py
@@ -28,3 +34,11 @@ jobs:
     name: '${{ needs.verify.outputs.summary }}; hosts ${{ needs.verify.outputs.hosts }}'
     steps:
       - run: echo 'Read-only AWS media coverage report.'
+
+  mapping:
+    needs: verify
+    if: always()
+    runs-on: ubuntu-latest
+    name: 'AWS mapping ${{ needs.verify.outputs.migration_sample }}; first error ${{ needs.verify.outputs.first_failure }}'
+    steps:
+      - run: echo 'Earlier mapping and read-only availability result.'
