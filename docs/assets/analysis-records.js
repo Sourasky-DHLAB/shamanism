@@ -38,23 +38,26 @@
     }
     return records;
   }
-  function ngrams(streams, n) {
+  function ngrams(streams, n, exclude = () => false) {
     const counts = new Map();
     for (const tokens of streams) for (let i = 0; i <= tokens.length - n; i++) {
-      const gram = tokens.slice(i, i + n).join(' ');
+      const span = tokens.slice(i, i + n);
+      if (span.some(exclude)) continue;
+      const gram = span.join(' ');
       counts.set(gram, (counts.get(gram) || 0) + 1);
     }
     return counts;
   }
-  function collocations(streams, windowSize) {
+  function collocations(streams, windowSize, exclude = () => false) {
     const pairMap = new Map(), freq = new Map();
     let totalTokens = 0;
     for (const tokens of streams) {
-      totalTokens += tokens.length;
-      tokens.forEach(token => freq.set(token, (freq.get(token) || 0) + 1));
+      const eligible = tokens.filter(token => !exclude(token));
+      totalTokens += eligible.length;
+      eligible.forEach(token => freq.set(token, (freq.get(token) || 0) + 1));
       for (let i = 0; i < tokens.length; i++) for (let j = i + 1; j < Math.min(tokens.length, i + windowSize + 1); j++) {
         const a = tokens[i], b = tokens[j];
-        if (!a || !b || a === b) continue;
+        if (!a || !b || a === b || exclude(a) || exclude(b)) continue;
         const key = a < b ? `${a}|||${b}` : `${b}|||${a}`;
         pairMap.set(key, (pairMap.get(key) || 0) + 1);
       }

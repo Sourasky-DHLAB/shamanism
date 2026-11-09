@@ -54,6 +54,28 @@ def run():
         expect(page.locator('#ngrams-output')).to_contain_text('oh wow')
         page.locator('[data-panel=collocation]').click()
         expect(page.locator('#collocation-output')).not_to_contain_text('beautiful')
+        positional = {'collections':[{'id':'positions','title':'Positions','posts':[{
+            'id':'positions','username':'author','caption':'real adjacent','datePosted':'2026-01-01','media':[], 'commentsPreserved':2,
+            'comments':[{'id':'near','text':'ritual and healing'}, {'id':'far','text':'distant the and of healing'}]
+        }]}]}
+        page.route('**/data/archive.json', lambda r: r.fulfill(content_type='application/json', body=json.dumps(positional)))
+        page.reload()
+        page.locator('#window-size').fill('2')
+        page.locator('#run-btn').click()
+        page.locator('[data-panel=ngrams]').click()
+        expect(page.locator('#ngrams-output')).to_contain_text('real adjacent')
+        expect(page.locator('#ngrams-output')).not_to_contain_text('ritual healing')
+        expect(page.locator('#ngrams-output')).not_to_contain_text('distant healing')
+        page.locator('[data-panel=collocation]').click()
+        expect(page.locator('#collocation-output')).to_contain_text('ritual')
+        expect(page.locator('#collocation-output')).not_to_contain_text('distant')
+        page.locator('#window-size').fill('4')
+        page.locator('#run-btn').click()
+        expect(page.locator('#collocation-output')).to_contain_text('distant')
+        page.locator('#kwic-term').fill('ritual')
+        page.locator('#run-btn').click()
+        page.locator('[data-panel=kwic]').click()
+        expect(page.locator('.kwic-line')).to_have_text('ritual and healing')
         assert not errors, errors
         browser.close()
     server.shutdown()

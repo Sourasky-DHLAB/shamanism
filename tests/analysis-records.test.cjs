@@ -50,3 +50,22 @@ test('stopword text files support BOM, CRLF, blank lines, duplicates, and Hebrew
   assert.equal(A.parseStopwords(' \n').size, 0);
   assert.throws(() => A.parseStopwords('two words'), /one stopword per line/);
 });
+
+test('stopwords cannot create artificial n-grams or shorten collocation distances', () => {
+  const excluded = new Set(['and', 'the', 'of']);
+  const skip = t => excluded.has(t);
+  const streams = [['ritual', 'and', 'healing'], ['ritual', 'the', 'and', 'of', 'healing'], ['real', 'adjacent']];
+  const grams = A.ngrams(streams, 2, skip);
+  assert.deepEqual([...grams], [['real adjacent', 1]]);
+  assert.equal(A.collocations([streams[0]], 1, skip).pairMap.size, 0);
+  assert.equal(A.collocations([streams[0]], 2, skip).pairMap.get('healing|||ritual'), 1);
+  const result = A.collocations([streams[1]], 3, skip);
+  assert.equal(result.pairMap.size, 0);
+  assert.equal(result.freq.get('ritual'), 1);
+  assert.equal(result.totalTokens, 2);
+  assert.equal(A.collocations([streams[1]], 4, skip).pairMap.get('healing|||ritual'), 1);
+  assert.equal(A.ngrams([streams[0]], 2).get('ritual and'), 1);
+  assert.equal(A.ngrams([streams[0]], 3, skip).size, 0);
+  assert.equal(A.ngrams([['and', 'the']], 2, skip).size, 0);
+  assert.equal(A.collocations([['and', 'the']], 2, skip).totalTokens, 0);
+});
