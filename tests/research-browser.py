@@ -122,7 +122,7 @@ def run():
         expect(b.locator('.post-card')).to_have_count(2)
         stranger.locator('#research-login input[name=email]').fill('stranger@example.test')
         stranger.locator('#research-login input[name=password]').fill('password')
-        stranger.locator('#research-login button').click()
+        stranger.locator('#research-login button[type=submit]').click()
         expect(stranger.locator('#research-status')).to_contain_text('not been granted')
         stranger.locator('[data-post-id="archive-id-1"]').click()
         expect(stranger.locator('#research-editor')).to_have_count(0)
