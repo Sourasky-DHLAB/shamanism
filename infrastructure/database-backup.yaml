@@ -47,6 +47,7 @@ Resources:
   BackupBucketPolicy:
     Type: AWS::S3::BucketPolicy
     DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       Bucket: !Ref BackupBucket
       PolicyDocument:

@@ -9,13 +9,29 @@ permissions:
 jobs:
   fixtures:
     runs-on: ubuntu-latest
+    outputs:
+      lint: ${{ steps.lint.outputs.result }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          sparse-checkout: |
+            /tools/backup_supabase.py
+            /tests/test_backup_supabase.py
+            /infrastructure/database-backup.yaml
+          sparse-checkout-cone-mode: false
       - run: python -m unittest discover -s tests -p test_backup_supabase.py -v
       - run: pip install cfn-lint
-      - run: cfn-lint infrastructure/database-backup.yaml
+      - id: lint
+        run: |
+          python - <<'PY'
+          import os, subprocess
+          result = subprocess.run(['cfn-lint', 'infrastructure/database-backup.yaml'], capture_output=True, text=True)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('result=' + (' '.join(result.stdout.split())[:230] or 'Template validation passed') + '\n')
+          print(result.stdout)
+          raise SystemExit(result.returncode)
+          PY
       - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb
         with:
           version: 3.0.0
@@ -23,3 +39,10 @@ jobs:
         run: |
           supabase db dump --help > /tmp/dump-help
           for flag in remote role-only data-only use-copy; do grep -- "--$flag" /tmp/dump-help; done
+  template-result:
+    if: always()
+    needs: fixtures
+    runs-on: ubuntu-latest
+    name: ${{ needs.fixtures.outputs.lint || 'Template check did not run' }}
+    steps:
+      - run: echo 'Template validation result is shown in the job name.'
