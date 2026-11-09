@@ -1,0 +1,4 @@
+# Originals are preserved in the repository and served by AWS CloudFront.
+# Keep them out of the GitHub Pages artifact.
+exclude:
+  - media

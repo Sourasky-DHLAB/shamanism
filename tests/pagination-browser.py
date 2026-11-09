@@ -17,6 +17,7 @@ def run():
     server = ThreadingHTTPServer(('127.0.0.1', 0), partial(QuietHandler, directory=str(root / 'docs')))
     threading.Thread(target=server.serve_forever, daemon=True).start()
     posts = [{'id':str(i), 'shortcode':str(i), 'caption':f'Entry {i}' + (' tailMarker' if i == 55 else ''), 'datePosted':'2026-01-01', 'comments':[], 'media':[], 'commentsPreserved':0, 'commentsReported':0} for i in range(1, 56)]
+    posts[0]['media'] = [{'type':'Photo','sourceUrl':'https://example.test/original.jpg','localPath':'media/the.baby.mudang/test.jpg'}]
     archive = {'collections':[{'id':'test','title':'Test','posts':posts}]}
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
@@ -25,7 +26,9 @@ def run():
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.route('**/data/archive.json', lambda r: r.fulfill(content_type='application/json', body=json.dumps(archive)))
         page.route('**/data/the-baby-mudang-metadata.json', lambda r: r.fulfill(content_type='application/json', body=json.dumps({'account':'the.baby.mudang','posts':[]})))
+        page.route('https://d3ond2bpn3cm3y.cloudfront.net/**', lambda r: r.fulfill(content_type='image/svg+xml', body='<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>'))
         page.goto(f'http://127.0.0.1:{server.server_port}/index.html')
+        expect(page.locator('.post-card img').first).to_have_attribute('src', 'https://d3ond2bpn3cm3y.cloudfront.net/the.baby.mudang/test.jpg')
         expect(page.locator('.post-card')).to_have_count(24)
         expect(page.locator('#page-status')).to_have_text('Page 1 of 3')
         expect(page.locator('#previous-page')).to_be_disabled()

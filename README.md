@@ -105,3 +105,8 @@ The research workspace adds one shared notes field and multiple free-form tags t
 ## Instagram account metadata
 
 For the.baby.mudang, Provenance includes linked original publisher, collaborators, tagged accounts, caption mentions, and Instagram hashtags. These values are searchable and retained in a separate metadata file keyed by shortcode, so comments and research annotations are unaffected. Missing live matches fall back to archived caption mentions/hashtags; unavailable structured fields are labeled Not recovered. Other collections are unchanged. The recovery file is a snapshot of currently retrievable posts, not a guarantee of historical completeness.
+
+## Media hosting and Pages deployments
+
+Archived `media/account/file` references are resolved by `docs/assets/media-url.js` to `https://d3ond2bpn3cm3y.cloudfront.net/account/file`. The original media files remain in `docs/media` for preservation, but `docs/_config.yml` excludes that folder from the published Pages build. Existing absolute URLs are preserved. Before importing new local media references, upload their account/file keys to the AWS archive and run the coverage check; local downloads alone will not be published by Pages.
+
