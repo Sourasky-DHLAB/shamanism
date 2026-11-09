@@ -359,6 +359,13 @@
         </div>
 
         <label class="check"><input id="remove-stopwords" type="checkbox" checked><span>Remove stop words</span></label>
+        <div class="field">
+          <label for="stopwords-file">Custom stopwords (.txt)</label>
+          <input id="stopwords-file" type="file" accept=".txt,text/plain" aria-describedby="stopwords-help stopwords-status">
+          <p id="stopwords-help" class="muted">Upload a UTF-8 text file with one word per line. The words supplement the built-in list when Remove stop words is enabled. Matching ignores capitalization. The file stays in your browser; KWIC context keeps its original words.</p>
+          <p id="stopwords-status" class="muted" role="status" aria-live="polite">No custom stopword file loaded.</p>
+          <button id="clear-stopwords" class="secondary" type="button">Clear uploaded stopwords</button>
+        </div>
         <label class="check"><input id="case-sensitive" type="checkbox"><span>Case sensitive</span></label>
 
         <div class="inline-3">

@@ -44,3 +44,9 @@ test('replies are separate records; repeated storage of the same reply is dedupl
   assert.equal(A.kwic(docs, 'words reply', 4, false).length, 0);
   assert.equal(A.kwic(docs, 'reply words', 4, false).length, 1);
 });
+
+test('stopword text files support BOM, CRLF, blank lines, duplicates, and Hebrew', () => {
+  assert.deepEqual([...A.parseStopwords('\ufeffaccordance\r\naccording\r\naccordingly\nacross\n\nACROSS\nשלום')], ['accordance','according','accordingly','across','שלום']);
+  assert.equal(A.parseStopwords(' \n').size, 0);
+  assert.throws(() => A.parseStopwords('two words'), /one stopword per line/);
+});

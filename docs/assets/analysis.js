@@ -1,6 +1,8 @@
 (() => {
   const els = {};
   const state = { archive: null, posts: [], filtered: [] };
+  let uploadedStopwords = new Set();
+  let stopwordImportId = 0;
 
   const STOP_WORDS = new Set([
     'a','an','and','are','as','at','be','by','for','from','has','he','in','is','it','its','of','on','that','the','to','was','were','will','with','i','you','your','we','they','them','their','this','those','these','or','not','but','if','then','than','so','too','very','can','could','should','would','may','might','into','over','under','about','after','before','between','among','through','during','again','further','once','here','there','when','where','why','how','all','any','both','each','few','more','most','other','some','such','no','nor','only','own','same','s','t','d','ll','m','o','re','ve','y','ma'
@@ -52,6 +54,29 @@
   }
 
   function bindEvents() {
+    document.querySelector('#stopwords-file').addEventListener('change', async event => {
+      const file = event.target.files[0];
+      const importId = ++stopwordImportId;
+      if (!file) return;
+      const status = document.querySelector('#stopwords-status');
+      try {
+        if (file.size > 1024 * 1024) throw new Error('Choose a text file smaller than 1 MB.');
+        const words = AnalysisRecords.parseStopwords(await file.text());
+        if (importId !== stopwordImportId) return;
+        uploadedStopwords = words;
+        status.textContent = `${file.name}: ${words.size} custom stopwords loaded. Enable Remove stop words to apply them.`;
+        runAnalysis();
+      } catch (error) {
+        if (importId === stopwordImportId) status.textContent = `${error.message} The previous list has been kept.`;
+      }
+    });
+    document.querySelector('#clear-stopwords').addEventListener('click', () => {
+      stopwordImportId++;
+      uploadedStopwords = new Set();
+      document.querySelector('#stopwords-file').value = '';
+      document.querySelector('#stopwords-status').textContent = 'No custom stopword file loaded.';
+      runAnalysis();
+    });
     [els.collection, els.type, els.from, els.to, els.commentsOnly, els.sourceMode, els.removeStopwords, els.caseSensitive, els.ngramSize, els.windowSize, els.contextSize]
       .forEach(el => el.addEventListener('change', runAnalysis));
     els.runBtn.addEventListener('click', runAnalysis);
@@ -97,7 +122,7 @@
     state.filtered = filterPosts(state.posts);
     const docs = buildDocuments(state.filtered);
     const tokens = docs.flatMap(doc => tokenize(doc.text, !els.caseSensitive.checked));
-    const tokenStream = els.removeStopwords.checked ? tokens.filter(token => !STOP_WORDS.has(token)) : tokens;
+    const tokenStream = els.removeStopwords.checked ? tokens.filter(token => !isStopword(token)) : tokens;
 
     renderSummary(docs, tokenStream);
     renderWordFrequency(docs);
@@ -137,7 +162,7 @@
   }
 
   function renderWordFrequency(docs) {
-    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !STOP_WORDS.has(token)));
+    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !isStopword(token)));
     const counts = AnalysisRecords.frequencies(streams);
     const rows = counts.slice(0, 50).map(({ term, count, records }) => `<tr><td>${escapeHtml(term)}</td><td>${formatNumber(count)}</td><td>${formatNumber(records)}</td></tr>`).join('');
     els.frequencyOutput.innerHTML = rows ? tableWrap('Term', 'Total occurrences', rows, ['Records']) : emptyState('No tokens matched your filters.');
@@ -145,7 +170,7 @@
 
   function renderCollocations(docs) {
     const windowSize = clampInt(els.windowSize.value, 2, 10);
-    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !STOP_WORDS.has(token)));
+    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !isStopword(token)));
     const { pairMap, freq, totalTokens } = AnalysisRecords.collocations(streams, windowSize);
 
     const rowsData = [...pairMap.entries()].map(([key, count]) => {
@@ -162,7 +187,7 @@
 
   function renderNgrams(docs) {
     const n = clampInt(els.ngramSize.value, 2, 5);
-    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !STOP_WORDS.has(token)));
+    const streams = docs.map(doc => tokenize(doc.text, !els.caseSensitive.checked).filter(token => !els.removeStopwords.checked || !isStopword(token)));
     const counts = AnalysisRecords.ngrams(streams, n);
     const rowsData = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 50);
     const rows = rowsData.map(([gram, count]) => `<tr><td>${escapeHtml(gram)}</td><td>${formatNumber(count)}</td></tr>`).join('');
@@ -207,6 +232,11 @@
 
   function tokenize(text, normalize = true) {
     return AnalysisRecords.tokenize(text, normalize);
+  }
+
+  function isStopword(token) {
+    const word = String(token).normalize('NFKD').toLowerCase().replace(/’/g, "'");
+    return STOP_WORDS.has(word) || uploadedStopwords.has(word);
   }
 
   function normalizeForSearch(text, caseSensitive) {

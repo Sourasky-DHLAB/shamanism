@@ -88,5 +88,10 @@
     }
     return [...counts.values()].sort((a, b) => b.count - a.count || a.term.localeCompare(b.term));
   }
-  return { tokenize, buildDocuments, ngrams, collocations, kwic, frequencies };
+  function parseStopwords(text) {
+    const words = String(text).replace(/^\uFEFF/, '').split(/\r\n|\n|\r/).map(line => line.trim()).filter(Boolean);
+    if (words.some(word => /\s/u.test(word))) throw new Error('Use one stopword per line, without spaces inside a word.');
+    return new Set(words.map(word => word.normalize('NFKD').toLowerCase().replace(/’/g, "'")));
+  }
+  return { tokenize, buildDocuments, ngrams, collocations, kwic, frequencies, parseStopwords };
 });

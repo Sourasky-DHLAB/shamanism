@@ -1,7 +1,7 @@
 name: Analysis record boundaries
 on:
   push:
-    branches: ['fix/analysis-record-boundaries', 'feature/record-frequency']
+    branches: ['fix/analysis-record-boundaries', 'feature/record-frequency', 'feature/stopword-file']
   pull_request:
     paths: ['docs/assets/analysis*.js', 'docs/analysis.html', 'tests/analysis*']
 permissions:
