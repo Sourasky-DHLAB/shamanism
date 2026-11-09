@@ -34,6 +34,12 @@
         <label>Email <input name="email" type="email" required autocomplete="username"></label>
         <label>Password <input name="password" type="password" required autocomplete="current-password"></label>
         <button class="button" type="submit">Researcher sign in</button>
+        <button id="forgot-password" class="research-text-button" type="button">Forgot password?</button>
+      </form>
+      <form id="research-recovery" hidden>
+        <label>Email <input name="email" type="email" required autocomplete="email"></label>
+        <button class="button" type="submit">Send reset link</button>
+        <button id="recovery-back" class="button secondary" type="button">Back to sign in</button>
       </form>
       <div id="research-team" hidden>
         <div class="research-actions"><span id="research-user"></span>
@@ -66,6 +72,27 @@
         form.reset(); renderAccount(); notify(); message('Shared annotations loaded.');
       } catch (error) { message(error.message, true); }
       finally { form.elements.password.value = ''; button.disabled = false; }
+    });
+    $('#forgot-password').addEventListener('click', () => {
+      $('#research-recovery').elements.email.value = $('#research-login').elements.email.value;
+      $('#research-login').hidden = true;
+      $('#research-recovery').hidden = false;
+      message('Enter your researcher email to request a password reset link.');
+      $('#research-recovery').elements.email.focus();
+    });
+    $('#recovery-back').addEventListener('click', () => {
+      renderAccount(); message('Sign in to read and edit shared research notes and tags.');
+    });
+    $('#research-recovery').addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = event.currentTarget, button = $('button[type=submit]', form);
+      button.disabled = true;
+      try {
+        const client = new PasswordRecovery.Client(window.RESEARCH_CONFIG || {});
+        await client.send(form.elements.email.value, new URL('reset-password.html', window.location.href).href);
+        message('If this email belongs to an account, a password reset link will be sent. Check your inbox and spam folder.');
+      } catch (error) { message('Could not send a reset link: ' + error.message, true); }
+      finally { button.disabled = false; }
     });
     $('#research-logout').addEventListener('click', async () => {
       if (dirty() && !confirm('Discard unsaved annotation changes and sign out?')) return;
@@ -106,6 +133,7 @@
     document.addEventListener('visibilitychange', () => { if (active() && !document.hidden) refresh(true); });
   }
   function renderAccount() {
+    $('#research-recovery').hidden = true;
     $('#research-login').hidden = !store.configured || active();
     $('#research-team').hidden = !active();
     $('#research-user').textContent = active() ? `Signed in as ${store.member.display_name}` : '';
@@ -231,3 +259,4 @@
     mountEditor
   };
 })();
+
