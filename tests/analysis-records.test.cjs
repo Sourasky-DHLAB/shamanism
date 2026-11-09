@@ -1,6 +1,12 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const A = require('../docs/assets/analysis-records.js');
+test('frequency counts 15 occurrences across two individual records', () => {
+  const docs = A.buildDocuments([{ id: 'example', caption: Array(10).fill('mudang').join(' '), comments: [{ id: 'comment', text: Array(5).fill('mudang').join(' ') }] }], 'both');
+  assert.deepEqual(A.frequencies(docs.map(d => A.tokenize(d.text))), [{ term: 'mudang', count: 15, records: 2 }]);
+  assert.deepEqual(A.frequencies([['a', 'a'], [], ['b', 'a']]), [{ term: 'a', count: 3, records: 2 }, { term: 'b', count: 1, records: 1 }]);
+  assert.deepEqual(A.frequencies([]), []);
+});
 const post = { id: 'p1', username: 'publisher', caption: 'caption boundary', altText: 'image description', media: [{ altText: 'image description' }], comments: [
   { id: '1', username: 'a', text: 'beautiful' },
   { id: '2', username: 'b', text: 'beautiful' },

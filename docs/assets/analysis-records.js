@@ -75,5 +75,18 @@
     }
     return lines;
   }
-  return { tokenize, buildDocuments, ngrams, collocations, kwic };
+  function frequencies(streams) {
+    const counts = new Map();
+    for (const tokens of streams) {
+      const seen = new Set();
+      for (const term of tokens) {
+        const row = counts.get(term) || { term, count: 0, records: 0 };
+        row.count++;
+        if (!seen.has(term)) { row.records++; seen.add(term); }
+        counts.set(term, row);
+      }
+    }
+    return [...counts.values()].sort((a, b) => b.count - a.count || a.term.localeCompare(b.term));
+  }
+  return { tokenize, buildDocuments, ngrams, collocations, kwic, frequencies };
 });

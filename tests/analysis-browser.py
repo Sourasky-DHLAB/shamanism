@@ -14,9 +14,9 @@ def run():
     root = Path(__file__).resolve().parents[1]
     server = ThreadingHTTPServer(('127.0.0.1', 0), partial(QuietHandler, directory=str(root / 'docs')))
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    post = {'id':'test-post', 'username':'publisher', 'caption':'caption boundary', 'datePosted':'2026-01-01', 'contentType':'Image', 'commentsPreserved':4, 'media':[], 'comments':[
+    post = {'id':'test-post', 'username':'publisher', 'caption': ' '.join(['mudang'] * 10) + ' caption boundary', 'datePosted':'2026-01-01', 'contentType':'Image', 'commentsPreserved':4, 'media':[], 'comments':[
         {'id':str(i), 'username':f'author{i}', 'date':'2026-02-01', 'text':text}
-        for i, text in enumerate(['beautiful','beautiful','beautiful','oh wow you have been here'], 1)
+        for i, text in enumerate(['beautiful','beautiful','beautiful','oh wow you have been here ' + ' '.join(['mudang'] * 5)], 1)
     ]}
     archive = {'collections':[{'id':'test','title':'Test','posts':[post]}]}
     with sync_playwright() as pw:
@@ -27,7 +27,10 @@ def run():
         page.route('**/data/archive.json', lambda r: r.fulfill(content_type='application/json', body=json.dumps(archive)))
         page.goto(f'http://127.0.0.1:{server.server_port}/analysis.html')
         expect(page.locator('#summary')).to_contain_text('Text records')
+        row = page.locator('#frequency-output tbody tr').filter(has=page.get_by_role('cell', name='mudang', exact=True))
+        expect(row.locator('td')).to_have_text(['mudang', '15', '2'])
         page.locator('#source-mode').select_option('comments')
+        expect(row.locator('td')).to_have_text(['mudang', '5', '1'])
         page.locator('#kwic-term').fill('beautiful')
         page.locator('#run-btn').click()
         page.locator('[data-panel=kwic]').click()
