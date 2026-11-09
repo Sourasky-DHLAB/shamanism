@@ -1,0 +1,57 @@
+name: Private Supabase database backup
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: supabase-private-backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.DB_BACKUPS_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            /tools/backup_supabase.py
+          sparse-checkout-cone-mode: false
+      - name: Check required settings
+        env:
+          BACKUP_BUCKET: ${{ vars.BACKUP_BUCKET }}
+          AWS_BACKUP_ROLE_ARN: ${{ vars.AWS_BACKUP_ROLE_ARN }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        run: |
+          python - <<'PY'
+          import os
+          required = ['BACKUP_BUCKET','AWS_BACKUP_ROLE_ARN','AWS_REGION','SUPABASE_DB_URL','BACKUP_ENCRYPTION_PASSPHRASE']
+          missing = [name for name in required if not os.environ.get(name)]
+          if missing:
+              raise SystemExit('Missing GitHub Actions settings: ' + ', '.join(missing))
+          PY
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb
+        with:
+          version: 3.0.0
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
+        with:
+          role-to-assume: ${{ vars.AWS_BACKUP_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: research-database-backup
+          mask-aws-account-id: true
+      - name: Encrypt, upload and verify the database backup
+        env:
+          BACKUP_BUCKET: ${{ vars.BACKUP_BUCKET }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+          AWS_EC2_METADATA_DISABLED: 'true'
+        run: python tools/backup_supabase.py
+

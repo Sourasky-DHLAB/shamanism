@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Private encrypted research database backups with restricted GitHub OIDC access.
+Parameters:
+  CreateGitHubOIDCProvider:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Choose false if token.actions.githubusercontent.com already exists in IAM Identity providers.
+Conditions:
+  CreateProvider: !Equals [!Ref CreateGitHubOIDCProvider, 'true']
+Resources:
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+  BackupBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ThirtyDayDatabaseBackups
+            Prefix: supabase/utwwjzpzreoumchytpzk/
+            Status: Enabled
+            ExpirationInDays: 30
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+  BackupBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Bucket: !Ref BackupBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: RequireHTTPS
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource:
+              - !GetAtt BackupBucket.Arn
+              - !Sub '${BackupBucket.Arn}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
+  BackupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Upload encrypted Supabase backups from the archive main-branch workflow only.
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - CreateProvider
+                - !Ref GitHubOIDCProvider
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub:
+                  - repo:Sourasky-DHLAB/shamanism:ref:refs/heads/main
+                  - repo:Sourasky-DHLAB@125898954/shamanism@1321459420:ref:refs/heads/main
+      Policies:
+        - PolicyName: PrivateBackupObjectsOnly
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetBucketPublicAccessBlock
+                  - s3:GetBucketPolicyStatus
+                  - s3:GetEncryptionConfiguration
+                  - s3:GetLifecycleConfiguration
+                Resource: !GetAtt BackupBucket.Arn
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub '${BackupBucket.Arn}/supabase/utwwjzpzreoumchytpzk/*'
+Outputs:
+  BackupBucketName:
+    Value: !Ref BackupBucket
+    Description: Set GitHub Actions variable BACKUP_BUCKET to this name.
+  BackupRoleArn:
+    Value: !GetAtt BackupRole.Arn
+    Description: Set GitHub Actions variable AWS_BACKUP_ROLE_ARN to this ARN.
+  BackupRegion:
+    Value: !Ref AWS::Region
+    Description: Set GitHub Actions variable AWS_REGION to this region.
