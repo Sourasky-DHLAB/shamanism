@@ -107,3 +107,8 @@ pre.output { max-height: 300px; overflow: auto; background: #1e2420; color: #f4f
   .control-actions { align-items: stretch; flex-direction: column; }
   .media-gallery { grid-auto-columns: 92%; }
 }
+
+.pagination { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0; }
+.pagination[hidden] { display: none; }
+.pagination button:disabled { opacity: .45; cursor: default; }
+
