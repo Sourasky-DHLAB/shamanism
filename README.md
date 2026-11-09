@@ -101,3 +101,7 @@ The importer can replace commenter usernames with stable pseudonyms. Review cons
 ## Collaborative research notes and tags
 
 The research workspace adds one shared notes field and multiple free-form tags to each post, with tag filtering, overview counts, revision history, and CSV/JSON exports. It requires a configured shared Supabase project and allowlisted researcher accounts. Follow [RESEARCH_SETUP.md](RESEARCH_SETUP.md) to activate it. Without configuration, the archive remains browsable and annotations are disabled.
+
+## Instagram account metadata
+
+For the.baby.mudang, Provenance includes linked original publisher, collaborators, tagged accounts, caption mentions, and Instagram hashtags. These values are searchable and retained in a separate metadata file keyed by shortcode, so comments and research annotations are unaffected. Missing live matches fall back to archived caption mentions/hashtags; unavailable structured fields are labeled Not recovered. Other collections are unchanged. The recovery file is a snapshot of currently retrievable posts, not a guarantee of historical completeness.

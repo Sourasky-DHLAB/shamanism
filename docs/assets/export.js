@@ -23,7 +23,8 @@
   async function loadArchive() {
     const response = await fetch('data/archive.json', { cache: 'no-store' });
     if (!response.ok) throw new Error(`Could not load archive (${response.status})`);
-    return response.json();
+    const archive = await response.json();
+    return window.PostMetadata ? window.PostMetadata.attach(archive) : archive;
   }
 
   function flattenArchive(archive) {
@@ -61,6 +62,7 @@
   function searchableText(post) {
     return normalize([
       post.caption,
+      window.PostMetadata?.searchText(post),
       window.ResearchUI?.searchText(post),
       post.username,
       post.contentType,

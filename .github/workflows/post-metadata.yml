@@ -2,25 +2,43 @@ name: Account metadata recovery
 on:
   push:
     branches: ['metadata/recover-baby-mudang']
-    paths:
-      - 'tools/audit_post_metadata.py'
-      - '.github/workflows/post-metadata.yml'
+  pull_request:
+    paths: ['docs/assets/post-metadata.js', 'docs/data/the-baby-mudang-metadata.json']
 permissions:
   contents: read
 jobs:
-  audit:
+  validate:
     runs-on: ubuntu-latest
+    outputs:
+      coverage: ${{ steps.coverage.outputs.coverage }}
     steps:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
-            /docs/data/archive.json
-            /sd_msmy6c9e2hdn8fvsse.cleaned.json
-            /sd_msmym9bn11o4swgpu9.json
+            /docs/
+            !/docs/media/
             /tools/
+            /tests/
           sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Inspect archived posts and source export fields
-        run: python tools/audit_post_metadata.py
+      - name: Match recovered metadata to the archived account
+        id: coverage
+        run: python tools/check_metadata_coverage.py
+      - name: Metadata and session tests
+        run: node --test tests/post-metadata.test.cjs tests/research-store.test.cjs
+      - name: Browser integration
+        run: |
+          pip install playwright==1.61.0
+          python -m playwright install --with-deps chromium
+          python tests/research-browser.py
+  coverage:
+    needs: validate
+    runs-on: ubuntu-latest
+    name: 'Coverage: ${{ needs.validate.outputs.coverage }}'
+    steps:
+      - run: echo 'Read-only archive coverage checks completed.'
