@@ -12,3 +12,12 @@ button.research-tag { cursor: pointer; }
 .research-editor pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; padding: .75rem; background: #f8fafc; color: #0f172a; }
 .research-panel [hidden] { display: none !important; }
 .research-panel button:disabled, .research-editor button:disabled { opacity: .6; cursor: wait; }
+
+/* Align login inputs and button without label margins offsetting the row. */
+#research-login { display: grid; grid-template-columns: minmax(0, 14rem) minmax(0, 14rem) max-content; align-items: end; }
+#research-login label { margin: 0; min-width: 0; }
+#research-login input, #research-login button { height: 3rem; box-sizing: border-box; }
+@media (max-width: 640px) {
+  #research-login { grid-template-columns: minmax(0, 1fr); }
+  #research-login button { width: 100%; }
+}
