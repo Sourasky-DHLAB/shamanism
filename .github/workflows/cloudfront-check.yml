@@ -19,6 +19,10 @@ jobs:
           sparse-checkout: |
             /docs/data/archive.json
             /tools/check_cloudfront_media.py
+            /docs/assets/
+            /docs/index.html
+            /tests/pagination-browser.py
+            /tests/media-url.test.cjs
           sparse-checkout-cone-mode: false
       - name: Inspect earlier AWS mapping without changing current data
         run: |
@@ -27,6 +31,19 @@ jobs:
       - name: Verify AWS media coverage
         id: media
         run: python tools/check_cloudfront_media.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Media URL and paginated browser checks
+        run: |
+          node --test tests/media-url.test.cjs
+          node --check docs/assets/app.js
+          pip install playwright==1.61.0
+          python -m playwright install --with-deps chromium
+          python tests/pagination-browser.py
   report:
     needs: verify
     if: always()
