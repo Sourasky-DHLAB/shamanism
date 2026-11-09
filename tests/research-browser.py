@@ -25,6 +25,10 @@ def run():
     post = {'id': 'archive-id-1', 'shortcode': 'TEST1', 'caption': 'First post', 'datePosted': '2026-01-01', 'contentType': 'Image', 'comments': [], 'commentsPreserved': 0, 'commentsReported': 0}
     archive = {'collections': [{'id': 'collection', 'title': 'Test collection', 'posts': [post, {**post, 'id': 'archive-id-2', 'shortcode': 'TEST2', 'caption': 'Second post'}]}]}
     def api(route):
+        cors = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'apikey,content-type,authorization', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'}
+        if route.request.method == 'OPTIONS':
+            route.fulfill(status=204, headers=cors)
+            return
         path = urlparse(route.request.url).path
         body = route.request.post_data_json or {}
         status, data = 200, []
@@ -55,7 +59,7 @@ def run():
                 if body['p_from'] in row['tags']:
                     row['tags'] = list(dict.fromkeys(body['p_to'] if t == body['p_from'] else t for t in row['tags']))
                     row['version'] += 1; history[row['post_key']].insert(0, copy.deepcopy(row)); data += 1
-        route.fulfill(status=status, content_type='application/json', body=json.dumps(data))
+        route.fulfill(status=status, content_type='application/json', headers=cors, body=json.dumps(data))
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         contexts = [browser.new_context() for _ in range(3)]
