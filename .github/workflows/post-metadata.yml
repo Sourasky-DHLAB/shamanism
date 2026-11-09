@@ -1,0 +1,26 @@
+name: Account metadata recovery
+on:
+  push:
+    branches: ['metadata/recover-baby-mudang']
+    paths:
+      - 'tools/audit_post_metadata.py'
+      - '.github/workflows/post-metadata.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /docs/data/archive.json
+            /sd_msmy6c9e2hdn8fvsse.cleaned.json
+            /sd_msmym9bn11o4swgpu9.json
+            /tools/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inspect archived posts and source export fields
+        run: python tools/audit_post_metadata.py
