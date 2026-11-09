@@ -29,3 +29,5 @@ button.research-tag { cursor: pointer; }
 @media (max-width: 640px) {
   #research-user { flex-basis: 100%; }
 }
+
+#research-status.research-error { color: #b91c1c; font-weight: 700; }

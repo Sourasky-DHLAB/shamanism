@@ -8,7 +8,11 @@
   const tags = post => store.get(post).tags;
   const active = () => !!store.session && !!store.member;
   const dirty = () => !!editor && (editor.notes.value !== editor.base.notes || JSON.stringify(Research.uniqueTags(editor.tags)) !== JSON.stringify(Research.uniqueTags(editor.base.tags)) || !!$('#research-new-tag', editor.panel)?.value.trim());
-  const message = text => { $('#research-status').textContent = text; };
+  const message = (text, isError = false) => {
+    const status = $('#research-status');
+    status.textContent = text;
+    status.classList.toggle('research-error', isError);
+  };
   const notify = () => { renderOverview(); callbacks?.changed(); };
   function counts() {
     const map = new Map();
@@ -60,7 +64,7 @@
       try {
         await store.login(form.elements.email.value.trim(), form.elements.password.value);
         form.reset(); renderAccount(); notify(); message('Shared annotations loaded.');
-      } catch (error) { message(error.message); }
+      } catch (error) { message(error.message, true); }
       finally { form.elements.password.value = ''; button.disabled = false; }
     });
     $('#research-logout').addEventListener('click', async () => {
