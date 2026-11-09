@@ -21,3 +21,11 @@ button.research-tag { cursor: pointer; }
   #research-login { grid-template-columns: minmax(0, 1fr); }
   #research-login button { width: 100%; }
 }
+
+/* Center account text with the signed-in toolbar buttons. */
+#research-team > .research-actions { align-items: center; }
+#research-team > .research-actions > .button { min-height: 3rem; box-sizing: border-box; }
+#research-user { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  #research-user { flex-basis: 100%; }
+}
